@@ -1,0 +1,16 @@
+node_modules
+.next
+.env
+.env.local
+.env*.local
+.DS_Store
+*.log
+.vercel
+.turbo
+out/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Local Claude Code config (settings, symlinked skills)
+.claude/
