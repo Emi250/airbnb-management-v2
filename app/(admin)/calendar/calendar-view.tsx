@@ -6,6 +6,13 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Plus, ChevronDown, ChevronRight, Search, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { formatCurrency, formatDateLong, formatDateShort, telLink } from "@/lib/format";
 import type { Property } from "@/types/supabase";
@@ -97,7 +104,6 @@ export function CalendarView({
   }
 
   const searchId = useId();
-  const statusId = useId();
   const totalCount = filtered.length;
 
   return (
@@ -125,23 +131,19 @@ export function CalendarView({
           />
         </div>
 
-        <label htmlFor={statusId} className="sr-only">
-          Filtrar por estado
-        </label>
-        <select
-          id={statusId}
-          name="status"
-          value={statusFilter}
-          onChange={(e) => setParam("status", e.target.value)}
-          className="h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          <option value="active">Activas</option>
-          <option value="all">Todas</option>
-          <option value="confirmed">Confirmadas</option>
-          <option value="pending">Pendientes</option>
-          <option value="completed">Completadas</option>
-          <option value="cancelled">Canceladas</option>
-        </select>
+        <Select value={statusFilter} onValueChange={(v) => setParam("status", v)}>
+          <SelectTrigger className="w-[160px]" aria-label="Filtrar por estado">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="active">Activas</SelectItem>
+            <SelectItem value="all">Todas</SelectItem>
+            <SelectItem value="confirmed">Confirmadas</SelectItem>
+            <SelectItem value="pending">Pendientes</SelectItem>
+            <SelectItem value="completed">Completadas</SelectItem>
+            <SelectItem value="cancelled">Canceladas</SelectItem>
+          </SelectContent>
+        </Select>
 
         <button
           type="button"
@@ -151,8 +153,8 @@ export function CalendarView({
             "rounded-full border px-3 py-1 text-xs transition-colors",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-card",
             showPast
-              ? "border-foreground/40 bg-secondary text-foreground hover:bg-secondary/80"
-              : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/40"
+              ? "bg-secondary text-foreground font-medium border-border"
+              : "border-border text-muted-foreground hover:bg-secondary hover:text-foreground"
           )}
         >
           {showPast ? "✓ " : ""}Mostrar pasadas

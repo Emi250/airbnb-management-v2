@@ -11,6 +11,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import type { Property } from "@/types/supabase";
+import { CHART_HEIGHT, tooltipStyle, gridProps } from "./chart-config";
 
 export function OccupancyBarChart({
   data,
@@ -20,10 +21,10 @@ export function OccupancyBarChart({
   properties: Property[];
 }) {
   return (
-    <div className="h-[280px]">
+    <div style={{ height: CHART_HEIGHT }}>
       <ResponsiveContainer>
         <BarChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+          <CartesianGrid {...gridProps} />
           <XAxis dataKey="month" stroke="var(--muted-foreground)" fontSize={11} />
           <YAxis
             stroke="var(--muted-foreground)"
@@ -32,12 +33,7 @@ export function OccupancyBarChart({
             domain={[0, 100]}
           />
           <Tooltip
-            contentStyle={{
-              background: "var(--card)",
-              border: "1px solid var(--border)",
-              borderRadius: 8,
-              fontSize: 12,
-            }}
+            contentStyle={tooltipStyle}
             formatter={(value: number) => `${value.toFixed(1)}%`}
           />
           <Legend wrapperStyle={{ fontSize: 11 }} />

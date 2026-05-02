@@ -3,6 +3,7 @@
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { formatCurrency, type Currency } from "@/lib/format";
 import type { ExchangeRate } from "@/types/supabase";
+import { CHART_HEIGHT, tooltipStyle } from "./chart-config";
 
 export function RevenueDonut({
   data,
@@ -18,7 +19,7 @@ export function RevenueDonut({
     return <p className="text-sm text-muted-foreground">Sin datos en el período.</p>;
   }
   return (
-    <div className="h-[280px]">
+    <div style={{ height: CHART_HEIGHT }}>
       <ResponsiveContainer>
         <PieChart>
           <Pie
@@ -34,12 +35,7 @@ export function RevenueDonut({
             ))}
           </Pie>
           <Tooltip
-            contentStyle={{
-              background: "var(--card)",
-              border: "1px solid var(--border)",
-              borderRadius: 8,
-              fontSize: 12,
-            }}
+            contentStyle={tooltipStyle}
             formatter={(value: number) => formatCurrency(value, currency, rate)}
           />
           <Legend wrapperStyle={{ fontSize: 11 }} />

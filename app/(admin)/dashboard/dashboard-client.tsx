@@ -1,8 +1,24 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { startOfMonth, endOfMonth, startOfYear, subMonths, endOfDay } from "date-fns";
+import {
+  startOfMonth,
+  endOfMonth,
+  startOfYear,
+  subMonths,
+  endOfDay,
+  format,
+  parseISO,
+} from "date-fns";
+import { es } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { formatCurrency, formatPercent, type Currency } from "@/lib/format";
 import {
   sumRevenue,
@@ -25,7 +41,14 @@ import { TopGuestsBar } from "@/components/charts/top-guests-bar";
 import { SourceBar } from "@/components/charts/source-bar";
 import { OccupancyHeatmap } from "@/components/charts/occupancy-heatmap";
 import { cn } from "@/lib/utils";
+import {
+  DollarSign,
+  TrendingUp,
+  BarChart3,
+  BedDouble,
+} from "lucide-react";
 import type { ExchangeRate, Property } from "@/types/supabase";
+import type { LucideIcon } from "lucide-react";
 
 type Reservation = {
   property_id: string;
@@ -48,6 +71,24 @@ type Expense = {
 
 type Preset = "thisMonth" | "lastMonth" | "ytd" | "last12";
 
+/* ── helpers ── */
+
+function buildLast12Months(): { value: string; label: string; date: Date }[] {
+  const months: { value: string; label: string; date: Date }[] = [];
+  const now = new Date();
+  for (let i = 0; i < 12; i++) {
+    const d = subMonths(now, i);
+    months.push({
+      value: format(d, "yyyy-MM"),
+      label: format(d, "MMMM yyyy", { locale: es }),
+      date: d,
+    });
+  }
+  return months;
+}
+
+/* ── component ── */
+
 export function DashboardClient({
   reservations,
   properties,
@@ -62,12 +103,19 @@ export function DashboardClient({
   rate: ExchangeRate;
 }) {
   const [currency, setCurrency] = useState<Currency>("ARS");
-  const [preset, setPreset] = useState<Preset>("thisMonth");
+  const [preset, setPreset] = useState<Preset | null>("thisMonth");
+  const [customMonth, setCustomMonth] = useState<string | null>(null);
   const [selectedProps, setSelectedProps] = useState<Set<string>>(
     () => new Set(properties.map((p) => p.id))
   );
 
+  const last12Months = useMemo(() => buildLast12Months(), []);
+
   const range = useMemo(() => {
+    if (customMonth) {
+      const d = parseISO(customMonth + "-01");
+      return { from: startOfMonth(d), to: endOfDay(endOfMonth(d)) };
+    }
     const now = new Date();
     if (preset === "thisMonth") return { from: startOfMonth(now), to: endOfDay(endOfMonth(now)) };
     if (preset === "lastMonth") {
@@ -76,7 +124,17 @@ export function DashboardClient({
     }
     if (preset === "ytd") return { from: startOfYear(now), to: endOfDay(now) };
     return { from: subMonths(now, 12), to: endOfDay(now) };
-  }, [preset]);
+  }, [preset, customMonth]);
+
+  function handlePreset(p: Preset) {
+    setPreset(p);
+    setCustomMonth(null);
+  }
+
+  function handleMonthSelect(value: string) {
+    setCustomMonth(value);
+    setPreset(null);
+  }
 
   const filteredProps = properties.filter((p) => selectedProps.has(p.id));
   const filteredRes = reservations.filter((r) => selectedProps.has(r.property_id));
@@ -101,7 +159,10 @@ export function DashboardClient({
   const balance = outstandingBalance(filteredRes);
   const expenseRange = sumExpenses(filteredExp, range.from, range.to);
   const netProfit = revenueRange - expenseRange;
-  const monthDelta = revenuePrevMonth > 0 ? (revenueThisMonth - revenuePrevMonth) / revenuePrevMonth : null;
+  const monthDelta =
+    revenuePrevMonth > 0
+      ? (revenueThisMonth - revenuePrevMonth) / revenuePrevMonth
+      : null;
 
   const monthlyRevenue = useMemo(
     () => monthlyRevenueByProperty(filteredRes, filteredProps, 12),
@@ -128,9 +189,10 @@ export function DashboardClient({
 
   return (
     <div className="space-y-6">
+      {/* ── Filter Bar ── */}
       <div className="sticky top-0 z-10 -mx-4 md:-mx-8 px-4 md:px-8 py-3 bg-background/80 backdrop-blur border-b border-border">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5">
             {(
               [
                 ["thisMonth", "Este mes"],
@@ -141,17 +203,40 @@ export function DashboardClient({
             ).map(([k, label]) => (
               <button
                 key={k}
-                onClick={() => setPreset(k)}
+                onClick={() => handlePreset(k)}
                 className={cn(
-                  "rounded-full border px-3 py-1 text-xs",
+                  "rounded-full border px-3 py-1 text-xs transition-colors",
                   preset === k
-                    ? "border-foreground/40 bg-secondary text-foreground"
-                    : "border-border text-muted-foreground"
+                    ? "bg-secondary text-foreground font-medium border-border"
+                    : "border-border text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
                 )}
               >
                 {label}
               </button>
             ))}
+
+            <Select
+              value={customMonth ?? ""}
+              onValueChange={handleMonthSelect}
+            >
+              <SelectTrigger
+                className={cn(
+                  "h-7 w-[160px] rounded-full border text-xs",
+                  customMonth
+                    ? "bg-secondary text-foreground font-medium border-border"
+                    : "border-border text-muted-foreground"
+                )}
+              >
+                <SelectValue placeholder="Elegir mes" />
+              </SelectTrigger>
+              <SelectContent>
+                {last12Months.map((m) => (
+                  <SelectItem key={m.value} value={m.value}>
+                    {m.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="ml-auto flex items-center gap-2">
@@ -189,8 +274,10 @@ export function DashboardClient({
                   key={c}
                   onClick={() => setCurrency(c)}
                   className={cn(
-                    "px-2 py-0.5 text-xs rounded-sm",
-                    currency === c ? "bg-secondary" : "text-muted-foreground"
+                    "px-2 py-0.5 text-xs rounded-sm transition-colors",
+                    currency === c
+                      ? "bg-secondary text-foreground"
+                      : "text-muted-foreground hover:text-foreground"
                   )}
                 >
                   {c}
@@ -201,32 +288,61 @@ export function DashboardClient({
         </div>
       </div>
 
+      {/* ── Primary KPIs ── */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi
+        <PrimaryKpi
+          icon={DollarSign}
           label="Ingresos del mes"
           value={fmt(revenueThisMonth)}
           delta={monthDelta}
         />
-        <Kpi label="Ingresos YTD" value={fmt(revenueYTD)} />
-        <Kpi label="Ocupación promedio" value={formatPercent(occRange)} />
-        <Kpi label="ADR (precio/noche)" value={fmt(adrRange)} />
-        <Kpi label="RevPAR" value={fmt(revparRange)} />
-        <Kpi label="Saldo pendiente" value={fmt(balance)} />
-        <Kpi label="Gastos del rango" value={fmt(expenseRange)} />
-        <Kpi
-          label="Beneficio neto"
-          value={fmt(netProfit)}
-          accent={netProfit >= 0 ? "positive" : "negative"}
+        <PrimaryKpi
+          icon={TrendingUp}
+          label="Ingresos YTD"
+          value={fmt(revenueYTD)}
+        />
+        <PrimaryKpi
+          icon={BarChart3}
+          label="Ocupación promedio"
+          value={formatPercent(occRange)}
+        />
+        <PrimaryKpi
+          icon={BedDouble}
+          label="ADR (precio/noche)"
+          value={fmt(adrRange)}
         />
       </div>
 
+      {/* ── Secondary KPIs ── */}
+      <div>
+        <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          Métricas secundarias
+        </p>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <SecondaryKpi label="RevPAR" value={fmt(revparRange)} />
+          <SecondaryKpi label="Saldo pendiente" value={fmt(balance)} />
+          <SecondaryKpi label="Gastos del rango" value={fmt(expenseRange)} />
+          <SecondaryKpi
+            label="Beneficio neto"
+            value={fmt(netProfit)}
+            accent={netProfit >= 0 ? "positive" : "negative"}
+          />
+        </div>
+      </div>
+
+      {/* ── Charts ── */}
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Ingresos mensuales · últimos 12 meses</CardTitle>
           </CardHeader>
           <CardContent>
-            <RevenueLineChart data={monthlyRevenue} properties={filteredProps} currency={currency} rate={rate} />
+            <RevenueLineChart
+              data={monthlyRevenue}
+              properties={filteredProps}
+              currency={currency}
+              rate={rate}
+            />
           </CardContent>
         </Card>
 
@@ -279,15 +395,50 @@ export function DashboardClient({
   );
 }
 
-function Kpi({
+/* ── KPI Components ── */
+
+function PrimaryKpi({
+  icon: Icon,
   label,
   value,
   delta,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+  delta?: number | null;
+}) {
+  return (
+    <Card>
+      <CardContent className="p-5">
+        <div className="flex items-center gap-2">
+          <Icon className="h-4 w-4 text-muted-foreground" />
+          <p className="text-xs uppercase text-muted-foreground">{label}</p>
+        </div>
+        <p className="numeric mt-2 text-2xl font-semibold">{value}</p>
+        {delta !== undefined && delta !== null && (
+          <p
+            className={cn(
+              "mt-1 text-xs",
+              delta >= 0 ? "text-emerald-500" : "text-destructive"
+            )}
+          >
+            {delta >= 0 ? "▲" : "▼"} {formatPercent(Math.abs(delta))} vs mes
+            anterior
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function SecondaryKpi({
+  label,
+  value,
   accent,
 }: {
   label: string;
   value: string;
-  delta?: number | null;
   accent?: "positive" | "negative";
 }) {
   return (
@@ -296,23 +447,13 @@ function Kpi({
         <p className="text-xs uppercase text-muted-foreground">{label}</p>
         <p
           className={cn(
-            "numeric mt-2 text-2xl font-semibold",
+            "numeric mt-1.5 text-lg font-semibold",
             accent === "positive" && "text-emerald-500",
             accent === "negative" && "text-destructive"
           )}
         >
           {value}
         </p>
-        {delta !== undefined && delta !== null && (
-          <p
-            className={cn(
-              "mt-1 text-xs",
-              delta >= 0 ? "text-emerald-500" : "text-destructive"
-            )}
-          >
-            {delta >= 0 ? "▲" : "▼"} {formatPercent(Math.abs(delta))} vs mes anterior
-          </p>
-        )}
       </CardContent>
     </Card>
   );

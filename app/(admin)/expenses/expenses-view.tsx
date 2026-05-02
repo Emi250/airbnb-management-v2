@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Trash2, Plus } from "lucide-react";
@@ -19,11 +19,27 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { expenseSchema, type ExpenseInput } from "@/lib/schemas";
 import { formatCurrency, formatDateShort } from "@/lib/format";
 import { createExpenseAction, deleteExpenseAction } from "./actions";
 import type { Property } from "@/types/supabase";
+
+const CATEGORY_LABELS: Record<string, string> = {
+  cleaning: "Limpieza",
+  maintenance: "Mantenimiento",
+  utilities: "Servicios",
+  supplies: "Insumos",
+  tax: "Impuestos",
+  other: "Otro",
+};
 
 type ExpenseRow = {
   id: string;
@@ -49,6 +65,7 @@ export function ExpensesView({
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors },
   } = useForm<ExpenseInput>({
     resolver: zodResolver(expenseSchema),
@@ -105,15 +122,21 @@ export function ExpensesView({
         {Object.entries(totalsByCategory).map(([cat, total]) => (
           <Card key={cat}>
             <CardContent className="p-4">
-              <p className="text-xs uppercase capitalize text-muted-foreground">{cat}</p>
-              <p className="numeric mt-2 text-xl font-semibold">{formatCurrency(total)}</p>
+              <p className="text-xs uppercase text-muted-foreground">
+                {CATEGORY_LABELS[cat] ?? cat}
+              </p>
+              <p className="numeric mt-1.5 text-lg font-semibold">
+                {formatCurrency(total)}
+              </p>
             </CardContent>
           </Card>
         ))}
         <Card>
           <CardContent className="p-4">
             <p className="text-xs uppercase text-muted-foreground">Total</p>
-            <p className="numeric mt-2 text-xl font-semibold">{formatCurrency(totalAll)}</p>
+            <p className="numeric mt-1.5 text-lg font-semibold">
+              {formatCurrency(totalAll)}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -146,7 +169,7 @@ export function ExpensesView({
                   <span className="text-muted-foreground">General</span>
                 )}
               </TableCell>
-              <TableCell className="capitalize">{e.category}</TableCell>
+              <TableCell>{CATEGORY_LABELS[e.category] ?? e.category}</TableCell>
               <TableCell>{e.description ?? "—"}</TableCell>
               <TableCell className="numeric text-right">
                 {formatCurrency(e.amount_ars)}
@@ -178,31 +201,49 @@ export function ExpensesView({
               </div>
               <div className="space-y-2">
                 <Label>Propiedad</Label>
-                <select
-                  {...register("property_id")}
-                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-                >
-                  <option value="">General</option>
-                  {properties.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
+                <Controller
+                  control={control}
+                  name="property_id"
+                  render={({ field }) => (
+                    <Select
+                      value={field.value ?? ""}
+                      onValueChange={(v) => field.onChange(v || null)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="General" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">General</SelectItem>
+                        {properties.map((p) => (
+                          <SelectItem key={p.id} value={p.id}>
+                            {p.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Categoría *</Label>
-                <select
-                  {...register("category")}
-                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-                >
-                  <option value="cleaning">Limpieza</option>
-                  <option value="maintenance">Mantenimiento</option>
-                  <option value="utilities">Servicios</option>
-                  <option value="supplies">Insumos</option>
-                  <option value="tax">Impuestos</option>
-                  <option value="other">Otro</option>
-                </select>
+                <Controller
+                  control={control}
+                  name="category"
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
             </div>
             <div className="space-y-2">

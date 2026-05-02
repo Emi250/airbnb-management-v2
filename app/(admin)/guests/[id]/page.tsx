@@ -46,7 +46,7 @@ export default async function GuestDetailPage({
         <Card>
           <CardContent className="p-4">
             <p className="text-xs uppercase text-muted-foreground">Reservas</p>
-            <p className="numeric mt-2 text-2xl font-semibold">
+            <p className="numeric mt-1.5 text-lg font-semibold">
               {res.filter((r) => r.status !== "cancelled").length}
             </p>
           </CardContent>
@@ -54,7 +54,7 @@ export default async function GuestDetailPage({
         <Card>
           <CardContent className="p-4">
             <p className="text-xs uppercase text-muted-foreground">Total gastado</p>
-            <p className="numeric mt-2 text-2xl font-semibold">{formatCurrency(total)}</p>
+            <p className="numeric mt-1.5 text-lg font-semibold">{formatCurrency(total)}</p>
           </CardContent>
         </Card>
         <Card>

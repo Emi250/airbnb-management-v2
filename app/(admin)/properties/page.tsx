@@ -24,7 +24,7 @@ export default async function PropertiesPage() {
           );
           return (
             <Link key={p.id} href={`/properties/${p.id}`} className="group">
-              <Card className="transition-colors hover:border-foreground/30">
+              <Card className="transition-colors hover:bg-secondary/50">
                 <CardContent className="p-5">
                   <div className="flex items-center gap-3">
                     <div

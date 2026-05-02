@@ -11,6 +11,7 @@ import {
 } from "recharts";
 import { formatCurrency, type Currency } from "@/lib/format";
 import type { ExchangeRate } from "@/types/supabase";
+import { CHART_HEIGHT, tooltipStyle, gridProps } from "./chart-config";
 
 export function TopGuestsBar({
   data,
@@ -25,10 +26,10 @@ export function TopGuestsBar({
     return <p className="text-sm text-muted-foreground">Sin huéspedes registrados.</p>;
   }
   return (
-    <div className="h-[280px]">
+    <div style={{ height: CHART_HEIGHT }}>
       <ResponsiveContainer>
         <BarChart data={data} layout="vertical" margin={{ left: 10 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
+          <CartesianGrid {...gridProps} vertical horizontal={false} />
           <XAxis
             type="number"
             stroke="var(--muted-foreground)"
@@ -37,12 +38,7 @@ export function TopGuestsBar({
           />
           <YAxis dataKey="name" type="category" stroke="var(--muted-foreground)" fontSize={11} width={120} />
           <Tooltip
-            contentStyle={{
-              background: "var(--card)",
-              border: "1px solid var(--border)",
-              borderRadius: 8,
-              fontSize: 12,
-            }}
+            contentStyle={tooltipStyle}
             formatter={(value: number) => formatCurrency(value, currency, rate)}
           />
           <Bar dataKey="total" fill="var(--primary)" radius={[0, 4, 4, 0]} />
