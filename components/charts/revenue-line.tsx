@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import { formatCurrency, type Currency } from "@/lib/format";
 import type { ExchangeRate, Property } from "@/types/supabase";
+import { CHART_HEIGHT, tooltipStyle, gridProps } from "./chart-config";
 
 export function RevenueLineChart({
   data,
@@ -25,10 +26,10 @@ export function RevenueLineChart({
   rate: ExchangeRate;
 }) {
   return (
-    <div className="h-[280px]">
+    <div style={{ height: CHART_HEIGHT }}>
       <ResponsiveContainer>
         <LineChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+          <CartesianGrid {...gridProps} />
           <XAxis dataKey="month" stroke="var(--muted-foreground)" fontSize={11} />
           <YAxis
             stroke="var(--muted-foreground)"
@@ -37,12 +38,7 @@ export function RevenueLineChart({
             width={90}
           />
           <Tooltip
-            contentStyle={{
-              background: "var(--card)",
-              border: "1px solid var(--border)",
-              borderRadius: 8,
-              fontSize: 12,
-            }}
+            contentStyle={tooltipStyle}
             formatter={(value: number) => formatCurrency(value, currency, rate)}
           />
           <Legend wrapperStyle={{ fontSize: 11 }} />

@@ -6,6 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { formatCurrency, formatDateShort } from "@/lib/format";
 import { Download } from "lucide-react";
 import type { Property } from "@/types/supabase";
@@ -182,18 +189,19 @@ export function ReportsClient({
           </div>
           <div className="space-y-2">
             <Label>Propiedad</Label>
-            <select
-              value={propertyId}
-              onChange={(e) => setPropertyId(e.target.value)}
-              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-            >
-              <option value="all">Todas</option>
-              {properties.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
+            <Select value={propertyId} onValueChange={setPropertyId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Todas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas</SelectItem>
+                {properties.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <Button className="w-full" onClick={monthlyByProperty}>
             <Download className="h-4 w-4" />

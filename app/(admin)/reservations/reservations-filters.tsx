@@ -4,6 +4,13 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { Search, X } from "lucide-react";
 import type { Property } from "@/types/supabase";
@@ -58,7 +65,9 @@ export function ReservationsFilters({ properties }: { properties: Property[] }) 
               onClick={() => toggleProperty(p.id)}
               className={cn(
                 "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs transition-colors",
-                active ? "border-accent bg-accent/10 text-foreground" : "border-border text-muted-foreground"
+                active
+                  ? "bg-secondary text-foreground font-medium border-border"
+                  : "border-border text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
               )}
             >
               <span
@@ -81,51 +90,64 @@ export function ReservationsFilters({ properties }: { properties: Property[] }) 
             className="pl-9"
           />
         </div>
-        <select
-          value={status}
-          onChange={(e) => setParam("status", e.target.value)}
-          className="h-9 rounded-md border border-input bg-background px-3 text-sm"
-        >
-          <option value="all">Todos los estados</option>
-          <option value="confirmed">Confirmadas</option>
-          <option value="pending">Pendientes</option>
-          <option value="completed">Completadas</option>
-          <option value="cancelled">Canceladas</option>
-        </select>
-        <select
-          value={source}
-          onChange={(e) => setParam("source", e.target.value)}
-          className="h-9 rounded-md border border-input bg-background px-3 text-sm"
-        >
-          <option value="all">Todos los canales</option>
-          <option value="airbnb">Airbnb</option>
-          <option value="booking">Booking</option>
-          <option value="direct">Directo</option>
-          <option value="other">Otro</option>
-        </select>
-        <select
-          value={paid}
-          onChange={(e) => setParam("paid", e.target.value)}
-          className="h-9 rounded-md border border-input bg-background px-3 text-sm"
-        >
-          <option value="all">Pago: todos</option>
-          <option value="paid">Pagadas</option>
-          <option value="partial">Parciales</option>
-          <option value="unpaid">Impagas</option>
-        </select>
-        <Input
-          type="date"
-          value={from}
-          onChange={(e) => setParam("from", e.target.value || null)}
-          aria-label="Desde"
-        />
-        <Input
-          type="date"
-          value={to}
-          onChange={(e) => setParam("to", e.target.value || null)}
-          aria-label="Hasta"
-        />
-        <Button variant="ghost" size="sm" onClick={clearAll} className="md:col-span-1">
+
+        <Select value={status} onValueChange={(v) => setParam("status", v)}>
+          <SelectTrigger>
+            <SelectValue placeholder="Todos los estados" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos los estados</SelectItem>
+            <SelectItem value="confirmed">Confirmadas</SelectItem>
+            <SelectItem value="pending">Pendientes</SelectItem>
+            <SelectItem value="completed">Completadas</SelectItem>
+            <SelectItem value="cancelled">Canceladas</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={source} onValueChange={(v) => setParam("source", v)}>
+          <SelectTrigger>
+            <SelectValue placeholder="Todos los canales" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos los canales</SelectItem>
+            <SelectItem value="airbnb">Airbnb</SelectItem>
+            <SelectItem value="booking">Booking</SelectItem>
+            <SelectItem value="direct">Directo</SelectItem>
+            <SelectItem value="other">Otro</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={paid} onValueChange={(v) => setParam("paid", v)}>
+          <SelectTrigger>
+            <SelectValue placeholder="Pago: todos" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Pago: todos</SelectItem>
+            <SelectItem value="paid">Pagadas</SelectItem>
+            <SelectItem value="partial">Parciales</SelectItem>
+            <SelectItem value="unpaid">Impagas</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <div className="space-y-1">
+          <label className="text-xs text-muted-foreground">Desde</label>
+          <Input
+            type="date"
+            value={from}
+            onChange={(e) => setParam("from", e.target.value || null)}
+            aria-label="Desde"
+          />
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs text-muted-foreground">Hasta</label>
+          <Input
+            type="date"
+            value={to}
+            onChange={(e) => setParam("to", e.target.value || null)}
+            aria-label="Hasta"
+          />
+        </div>
+        <Button variant="ghost" size="sm" onClick={clearAll} className="md:col-span-1 self-end">
           <X className="h-4 w-4" />
           Limpiar
         </Button>

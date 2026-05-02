@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { reservationSchema, type ReservationInput } from "@/lib/schemas";
 import { formatCurrency } from "@/lib/format";
 import {
@@ -40,7 +47,7 @@ export function ReservationForm({
     register,
     handleSubmit,
     watch,
-    setValue,
+    control,
     formState: { errors },
   } = useForm<ReservationInput>({
     resolver: zodResolver(reservationSchema),
@@ -117,17 +124,24 @@ export function ReservationForm({
         <div className="grid gap-4 md:grid-cols-3">
           <div className="space-y-2">
             <Label>Propiedad *</Label>
-            <select
-              {...register("property_id")}
-              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-            >
-              <option value="">Seleccionar...</option>
-              {properties.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
+            <Controller
+              control={control}
+              name="property_id"
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {properties.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
             {errors.property_id && <p className="text-xs text-destructive">{errors.property_id.message}</p>}
           </div>
           <div className="space-y-2">
@@ -149,27 +163,43 @@ export function ReservationForm({
           </div>
           <div className="space-y-2">
             <Label>Estado</Label>
-            <select
-              {...register("status")}
-              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-            >
-              <option value="confirmed">Confirmada</option>
-              <option value="pending">Pendiente</option>
-              <option value="completed">Completada</option>
-              <option value="cancelled">Cancelada</option>
-            </select>
+            <Controller
+              control={control}
+              name="status"
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="confirmed">Confirmada</SelectItem>
+                    <SelectItem value="pending">Pendiente</SelectItem>
+                    <SelectItem value="completed">Completada</SelectItem>
+                    <SelectItem value="cancelled">Cancelada</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            />
           </div>
           <div className="space-y-2">
             <Label>Canal</Label>
-            <select
-              {...register("source")}
-              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-            >
-              <option value="airbnb">Airbnb</option>
-              <option value="booking">Booking</option>
-              <option value="direct">Directo</option>
-              <option value="other">Otro</option>
-            </select>
+            <Controller
+              control={control}
+              name="source"
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="airbnb">Airbnb</SelectItem>
+                    <SelectItem value="booking">Booking</SelectItem>
+                    <SelectItem value="direct">Directo</SelectItem>
+                    <SelectItem value="other">Otro</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            />
           </div>
         </div>
       </section>
@@ -205,18 +235,27 @@ export function ReservationForm({
         ) : (
           <div className="space-y-2">
             <Label>Huésped existente *</Label>
-            <select
-              {...register("guest_id")}
-              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-              onChange={(e) => setValue("guest_id", e.target.value || null)}
-            >
-              <option value="">Seleccionar...</option>
-              {guests.map((g) => (
-                <option key={g.id} value={g.id}>
-                  {g.name} {g.country ? `· ${g.country}` : ""}
-                </option>
-              ))}
-            </select>
+            <Controller
+              control={control}
+              name="guest_id"
+              render={({ field }) => (
+                <Select
+                  value={field.value ?? ""}
+                  onValueChange={(v) => field.onChange(v || null)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {guests.map((g) => (
+                      <SelectItem key={g.id} value={g.id}>
+                        {g.name} {g.country ? `· ${g.country}` : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
             {errors.guest_id && <p className="text-xs text-destructive">{errors.guest_id.message}</p>}
           </div>
         )}
