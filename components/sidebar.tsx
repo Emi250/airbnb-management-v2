@@ -14,10 +14,8 @@ import {
   LogOut,
   Sun,
   Moon,
-  Menu,
   X,
 } from "lucide-react";
-import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { signOutAction } from "@/app/(auth)/login/actions";
@@ -34,26 +32,24 @@ const NAV = [
   { href: "/settings", label: "Ajustes", icon: Settings },
 ];
 
-export function Sidebar({ displayName }: { displayName: string }) {
+export function Sidebar({
+  displayName,
+  mobileOpen,
+  onMobileClose,
+}: {
+  displayName: string;
+  mobileOpen: boolean;
+  onMobileClose: () => void;
+}) {
   const pathname = usePathname();
-  const [mobileOpen, setMobileOpen] = useState(false);
   const { theme, toggle } = useTheme();
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setMobileOpen(true)}
-        className="fixed left-4 top-4 z-40 inline-flex h-10 w-10 items-center justify-center rounded-md border border-border bg-card md:hidden"
-        aria-label="Abrir menú"
-      >
-        <Menu className="h-5 w-5" />
-      </button>
-
       {mobileOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/50 md:hidden"
-          onClick={() => setMobileOpen(false)}
+          onClick={onMobileClose}
           aria-hidden
         />
       )}
@@ -76,7 +72,7 @@ export function Sidebar({ displayName }: { displayName: string }) {
           </div>
           <button
             type="button"
-            onClick={() => setMobileOpen(false)}
+            onClick={onMobileClose}
             className="md:hidden"
             aria-label="Cerrar menú"
           >
@@ -91,15 +87,15 @@ export function Sidebar({ displayName }: { displayName: string }) {
               <Link
                 key={href}
                 href={href}
-                onClick={() => setMobileOpen(false)}
+                onClick={onMobileClose}
                 className={cn(
-                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
                   active
-                    ? "bg-accent text-accent-foreground"
-                    : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                    ? "border-l-2 border-primary bg-secondary text-foreground font-semibold"
+                    : "border-l-2 border-transparent text-muted-foreground hover:bg-secondary hover:text-foreground"
                 )}
               >
-                <Icon className="h-4 w-4" />
+                <Icon className={cn("h-4 w-4", active && "text-primary")} />
                 {label}
               </Link>
             );
