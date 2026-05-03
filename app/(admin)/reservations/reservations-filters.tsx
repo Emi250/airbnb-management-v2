@@ -13,7 +13,12 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { Search, X } from "lucide-react";
-import type { Property } from "@/types/supabase";
+import { STATUS_LABEL_PLURAL, SOURCE_LABEL } from "@/lib/reservation-options";
+import type {
+  Property,
+  ReservationStatus,
+  ReservationSource,
+} from "@/types/supabase";
 
 export function ReservationsFilters({ properties }: { properties: Property[] }) {
   const router = useRouter();
@@ -97,10 +102,13 @@ export function ReservationsFilters({ properties }: { properties: Property[] }) 
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos los estados</SelectItem>
-            <SelectItem value="confirmed">Confirmadas</SelectItem>
-            <SelectItem value="pending">Pendientes</SelectItem>
-            <SelectItem value="completed">Completadas</SelectItem>
-            <SelectItem value="cancelled">Canceladas</SelectItem>
+            {(Object.entries(STATUS_LABEL_PLURAL) as [ReservationStatus, string][]).map(
+              ([value, label]) => (
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
+              )
+            )}
           </SelectContent>
         </Select>
 
@@ -110,10 +118,13 @@ export function ReservationsFilters({ properties }: { properties: Property[] }) 
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos los canales</SelectItem>
-            <SelectItem value="airbnb">Airbnb</SelectItem>
-            <SelectItem value="booking">Booking</SelectItem>
-            <SelectItem value="direct">Directo</SelectItem>
-            <SelectItem value="other">Otro</SelectItem>
+            {(Object.entries(SOURCE_LABEL) as [ReservationSource, string][]).map(
+              ([value, label]) => (
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
+              )
+            )}
           </SelectContent>
         </Select>
 

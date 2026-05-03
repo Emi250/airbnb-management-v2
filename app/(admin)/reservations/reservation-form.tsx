@@ -19,12 +19,18 @@ import {
 } from "@/components/ui/select";
 import { reservationSchema, type ReservationInput } from "@/lib/schemas";
 import { formatCurrency } from "@/lib/format";
+import { STATUS_LABEL, SOURCE_LABEL } from "@/lib/reservation-options";
 import {
   createReservationAction,
   updateReservationAction,
   cancelReservationAction,
 } from "./actions";
-import type { Property, Guest } from "@/types/supabase";
+import type {
+  Property,
+  Guest,
+  ReservationStatus,
+  ReservationSource,
+} from "@/types/supabase";
 
 type Defaults = Partial<ReservationInput> & { id?: string };
 
@@ -172,10 +178,13 @@ export function ReservationForm({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="confirmed">Confirmada</SelectItem>
-                    <SelectItem value="pending">Pendiente</SelectItem>
-                    <SelectItem value="completed">Completada</SelectItem>
-                    <SelectItem value="cancelled">Cancelada</SelectItem>
+                    {(Object.entries(STATUS_LABEL) as [ReservationStatus, string][]).map(
+                      ([value, label]) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      )
+                    )}
                   </SelectContent>
                 </Select>
               )}
@@ -192,10 +201,13 @@ export function ReservationForm({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="airbnb">Airbnb</SelectItem>
-                    <SelectItem value="booking">Booking</SelectItem>
-                    <SelectItem value="direct">Directo</SelectItem>
-                    <SelectItem value="other">Otro</SelectItem>
+                    {(Object.entries(SOURCE_LABEL) as [ReservationSource, string][]).map(
+                      ([value, label]) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      )
+                    )}
                   </SelectContent>
                 </Select>
               )}

@@ -15,7 +15,8 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { formatCurrency, formatDateLong, formatDateShort, telLink } from "@/lib/format";
-import type { Property } from "@/types/supabase";
+import { STATUS_LABEL_PLURAL } from "@/lib/reservation-options";
+import type { Property, ReservationStatus } from "@/types/supabase";
 import type { ReservationWithRefs } from "@/lib/queries/reservations";
 
 const STATUS_DEFAULT = "active";
@@ -138,10 +139,13 @@ export function CalendarView({
           <SelectContent>
             <SelectItem value="active">Activas</SelectItem>
             <SelectItem value="all">Todas</SelectItem>
-            <SelectItem value="confirmed">Confirmadas</SelectItem>
-            <SelectItem value="pending">Pendientes</SelectItem>
-            <SelectItem value="completed">Completadas</SelectItem>
-            <SelectItem value="cancelled">Canceladas</SelectItem>
+            {(Object.entries(STATUS_LABEL_PLURAL) as [ReservationStatus, string][]).map(
+              ([value, label]) => (
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
+              )
+            )}
           </SelectContent>
         </Select>
 

@@ -1,12 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import type { ReservationStatus } from "@/types/supabase";
-
-const LABEL: Record<ReservationStatus, string> = {
-  confirmed: "Confirmada",
-  pending: "Pendiente",
-  cancelled: "Cancelada",
-  completed: "Completada",
-};
+import { STATUS_LABEL } from "@/lib/reservation-options";
 
 const VARIANT: Record<ReservationStatus, "default" | "warning" | "destructive" | "success" | "secondary"> = {
   confirmed: "success",
@@ -16,7 +10,7 @@ const VARIANT: Record<ReservationStatus, "default" | "warning" | "destructive" |
 };
 
 export function StatusBadge({ status }: { status: ReservationStatus }) {
-  return <Badge variant={VARIANT[status]}>{LABEL[status]}</Badge>;
+  return <Badge variant={VARIANT[status]}>{STATUS_LABEL[status]}</Badge>;
 }
 
 export function PaidBadge({ paid, total }: { paid: number; total: number }) {

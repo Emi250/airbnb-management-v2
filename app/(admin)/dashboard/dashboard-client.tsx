@@ -71,7 +71,9 @@ type Expense = {
 
 type Preset = "thisMonth" | "lastMonth" | "ytd" | "last12";
 
-/* ── helpers ── */
+type RangeSel =
+  | { kind: "preset"; value: Preset }
+  | { kind: "month"; value: string };
 
 function buildLast12Months(): { value: string; label: string; date: Date }[] {
   const months: { value: string; label: string; date: Date }[] = [];
@@ -87,8 +89,6 @@ function buildLast12Months(): { value: string; label: string; date: Date }[] {
   return months;
 }
 
-/* ── component ── */
-
 export function DashboardClient({
   reservations,
   properties,
@@ -103,66 +103,96 @@ export function DashboardClient({
   rate: ExchangeRate;
 }) {
   const [currency, setCurrency] = useState<Currency>("ARS");
-  const [preset, setPreset] = useState<Preset | null>("thisMonth");
-  const [customMonth, setCustomMonth] = useState<string | null>(null);
+  const [rangeSel, setRangeSel] = useState<RangeSel>({ kind: "preset", value: "thisMonth" });
   const [selectedProps, setSelectedProps] = useState<Set<string>>(
     () => new Set(properties.map((p) => p.id))
   );
 
   const last12Months = useMemo(() => buildLast12Months(), []);
 
+  const { thisMonth, prevMonth, ytdRange, currentYear } = useMemo(() => {
+    const now = new Date();
+    return {
+      thisMonth: { from: startOfMonth(now), to: endOfDay(endOfMonth(now)) },
+      prevMonth: {
+        from: startOfMonth(subMonths(now, 1)),
+        to: endOfDay(endOfMonth(subMonths(now, 1))),
+      },
+      ytdRange: { from: startOfYear(now), to: endOfDay(now) },
+      currentYear: now.getFullYear(),
+    };
+  }, []);
+
   const range = useMemo(() => {
-    if (customMonth) {
-      const d = parseISO(customMonth + "-01");
+    if (rangeSel.kind === "month") {
+      const d = parseISO(rangeSel.value + "-01");
       return { from: startOfMonth(d), to: endOfDay(endOfMonth(d)) };
     }
     const now = new Date();
-    if (preset === "thisMonth") return { from: startOfMonth(now), to: endOfDay(endOfMonth(now)) };
-    if (preset === "lastMonth") {
-      const lm = subMonths(now, 1);
-      return { from: startOfMonth(lm), to: endOfDay(endOfMonth(lm)) };
+    switch (rangeSel.value) {
+      case "thisMonth":
+        return { from: startOfMonth(now), to: endOfDay(endOfMonth(now)) };
+      case "lastMonth": {
+        const lm = subMonths(now, 1);
+        return { from: startOfMonth(lm), to: endOfDay(endOfMonth(lm)) };
+      }
+      case "ytd":
+        return { from: startOfYear(now), to: endOfDay(now) };
+      case "last12":
+        return { from: subMonths(now, 12), to: endOfDay(now) };
     }
-    if (preset === "ytd") return { from: startOfYear(now), to: endOfDay(now) };
-    return { from: subMonths(now, 12), to: endOfDay(now) };
-  }, [preset, customMonth]);
+  }, [rangeSel]);
 
-  function handlePreset(p: Preset) {
-    setPreset(p);
-    setCustomMonth(null);
-  }
-
-  function handleMonthSelect(value: string) {
-    setCustomMonth(value);
-    setPreset(null);
-  }
-
-  const filteredProps = properties.filter((p) => selectedProps.has(p.id));
-  const filteredRes = reservations.filter((r) => selectedProps.has(r.property_id));
-  const filteredExp = expenses.filter(
-    (e) => !e.property_id || selectedProps.has(e.property_id)
+  const filteredProps = useMemo(
+    () => properties.filter((p) => selectedProps.has(p.id)),
+    [properties, selectedProps]
+  );
+  const filteredRes = useMemo(
+    () => reservations.filter((r) => selectedProps.has(r.property_id)),
+    [reservations, selectedProps]
+  );
+  const filteredExp = useMemo(
+    () => expenses.filter((e) => !e.property_id || selectedProps.has(e.property_id)),
+    [expenses, selectedProps]
   );
 
-  const now = new Date();
-  const thisMonth = { from: startOfMonth(now), to: endOfDay(endOfMonth(now)) };
-  const prevMonth = {
-    from: startOfMonth(subMonths(now, 1)),
-    to: endOfDay(endOfMonth(subMonths(now, 1))),
-  };
-
-  const revenueRange = sumRevenue(filteredRes, range.from, range.to);
-  const revenueThisMonth = sumRevenue(filteredRes, thisMonth.from, thisMonth.to);
-  const revenuePrevMonth = sumRevenue(filteredRes, prevMonth.from, prevMonth.to);
-  const revenueYTD = sumRevenue(filteredRes, startOfYear(now), endOfDay(now));
-  const occRange = occupancyRate(filteredRes, filteredProps, range.from, range.to);
-  const adrRange = adr(filteredRes, range.from, range.to);
-  const revparRange = revPar(filteredRes, filteredProps, range.from, range.to);
-  const balance = outstandingBalance(filteredRes);
-  const expenseRange = sumExpenses(filteredExp, range.from, range.to);
-  const netProfit = revenueRange - expenseRange;
-  const monthDelta =
-    revenuePrevMonth > 0
-      ? (revenueThisMonth - revenuePrevMonth) / revenuePrevMonth
-      : null;
+  const kpis = useMemo(() => {
+    const revenueRange = sumRevenue(filteredRes, range.from, range.to);
+    const revenueThisMonth = sumRevenue(filteredRes, thisMonth.from, thisMonth.to);
+    const revenuePrevMonth = sumRevenue(filteredRes, prevMonth.from, prevMonth.to);
+    const revenueYTD = sumRevenue(filteredRes, ytdRange.from, ytdRange.to);
+    const occRange = occupancyRate(filteredRes, filteredProps, range.from, range.to);
+    const adrRange = adr(filteredRes, range.from, range.to);
+    const revparRange = revPar(filteredRes, filteredProps, range.from, range.to);
+    const balance = outstandingBalance(filteredRes);
+    const expenseRange = sumExpenses(filteredExp, range.from, range.to);
+    const netProfit = revenueRange - expenseRange;
+    const monthDelta =
+      revenuePrevMonth > 0 ? (revenueThisMonth - revenuePrevMonth) / revenuePrevMonth : null;
+    return {
+      revenueRange,
+      revenueThisMonth,
+      revenueYTD,
+      occRange,
+      adrRange,
+      revparRange,
+      balance,
+      expenseRange,
+      netProfit,
+      monthDelta,
+    };
+  }, [filteredRes, filteredExp, filteredProps, range, thisMonth, prevMonth, ytdRange]);
+  const {
+    revenueThisMonth,
+    revenueYTD,
+    occRange,
+    adrRange,
+    revparRange,
+    balance,
+    expenseRange,
+    netProfit,
+    monthDelta,
+  } = kpis;
 
   const monthlyRevenue = useMemo(
     () => monthlyRevenueByProperty(filteredRes, filteredProps, 12),
@@ -189,7 +219,6 @@ export function DashboardClient({
 
   return (
     <div className="space-y-6">
-      {/* ── Filter Bar ── */}
       <div className="sticky top-0 z-10 -mx-4 md:-mx-8 px-4 md:px-8 py-3 bg-background/80 backdrop-blur border-b border-border">
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex flex-wrap items-center gap-1.5">
@@ -200,29 +229,32 @@ export function DashboardClient({
                 ["ytd", "YTD"],
                 ["last12", "Últ. 12 meses"],
               ] as [Preset, string][]
-            ).map(([k, label]) => (
-              <button
-                key={k}
-                onClick={() => handlePreset(k)}
-                className={cn(
-                  "rounded-full border px-3 py-1 text-xs transition-colors",
-                  preset === k
-                    ? "bg-secondary text-foreground font-medium border-border"
-                    : "border-border text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
-                )}
-              >
-                {label}
-              </button>
-            ))}
+            ).map(([k, label]) => {
+              const active = rangeSel.kind === "preset" && rangeSel.value === k;
+              return (
+                <button
+                  key={k}
+                  onClick={() => setRangeSel({ kind: "preset", value: k })}
+                  className={cn(
+                    "rounded-full border px-3 py-1 text-xs transition-colors",
+                    active
+                      ? "bg-secondary text-foreground font-medium border-border"
+                      : "border-border text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
+                  )}
+                >
+                  {label}
+                </button>
+              );
+            })}
 
             <Select
-              value={customMonth ?? ""}
-              onValueChange={handleMonthSelect}
+              value={rangeSel.kind === "month" ? rangeSel.value : ""}
+              onValueChange={(v) => setRangeSel({ kind: "month", value: v })}
             >
               <SelectTrigger
                 className={cn(
                   "h-7 w-[160px] rounded-full border text-xs",
-                  customMonth
+                  rangeSel.kind === "month"
                     ? "bg-secondary text-foreground font-medium border-border"
                     : "border-border text-muted-foreground"
                 )}
@@ -288,7 +320,6 @@ export function DashboardClient({
         </div>
       </div>
 
-      {/* ── Primary KPIs ── */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <PrimaryKpi
           icon={DollarSign}
@@ -313,7 +344,6 @@ export function DashboardClient({
         />
       </div>
 
-      {/* ── Secondary KPIs ── */}
       <div>
         <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
           Métricas secundarias
@@ -330,7 +360,6 @@ export function DashboardClient({
         </div>
       </div>
 
-      {/* ── Charts ── */}
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
@@ -384,7 +413,7 @@ export function DashboardClient({
 
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Ocupación diaria · {new Date().getFullYear()}</CardTitle>
+            <CardTitle>Ocupación diaria · {currentYear}</CardTitle>
           </CardHeader>
           <CardContent>
             <OccupancyHeatmap data={heatmap} />
@@ -394,8 +423,6 @@ export function DashboardClient({
     </div>
   );
 }
-
-/* ── KPI Components ── */
 
 function PrimaryKpi({
   icon: Icon,

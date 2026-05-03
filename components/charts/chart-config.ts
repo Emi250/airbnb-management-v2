@@ -1,5 +1,3 @@
-/** Shared Recharts configuration — single source of truth for tooltip, grid, and chart sizing. */
-
 import type React from "react";
 
 export const CHART_HEIGHT = 300;
@@ -15,4 +13,11 @@ export const gridProps = {
   strokeDasharray: "3 3",
   stroke: "var(--border)",
   vertical: false,
+} as const;
+
+export const verticalGridProps = {
+  strokeDasharray: "3 3",
+  stroke: "var(--border)",
+  vertical: true,
+  horizontal: false,
 } as const;

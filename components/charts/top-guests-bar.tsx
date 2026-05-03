@@ -11,7 +11,7 @@ import {
 } from "recharts";
 import { formatCurrency, type Currency } from "@/lib/format";
 import type { ExchangeRate } from "@/types/supabase";
-import { CHART_HEIGHT, tooltipStyle, gridProps } from "./chart-config";
+import { CHART_HEIGHT, tooltipStyle, verticalGridProps } from "./chart-config";
 
 export function TopGuestsBar({
   data,
@@ -29,7 +29,7 @@ export function TopGuestsBar({
     <div style={{ height: CHART_HEIGHT }}>
       <ResponsiveContainer>
         <BarChart data={data} layout="vertical" margin={{ left: 10 }}>
-          <CartesianGrid {...gridProps} vertical horizontal={false} />
+          <CartesianGrid {...verticalGridProps} />
           <XAxis
             type="number"
             stroke="var(--muted-foreground)"
