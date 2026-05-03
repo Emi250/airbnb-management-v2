@@ -29,17 +29,9 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { expenseSchema, type ExpenseInput } from "@/lib/schemas";
 import { formatCurrency, formatDateShort } from "@/lib/format";
+import { EXPENSE_CATEGORY_LABEL } from "@/lib/reservation-options";
 import { createExpenseAction, deleteExpenseAction } from "./actions";
-import type { Property } from "@/types/supabase";
-
-const CATEGORY_LABELS: Record<string, string> = {
-  cleaning: "Limpieza",
-  maintenance: "Mantenimiento",
-  utilities: "Servicios",
-  supplies: "Insumos",
-  tax: "Impuestos",
-  other: "Otro",
-};
+import type { Property, ExpenseCategory } from "@/types/supabase";
 
 type ExpenseRow = {
   id: string;
@@ -123,7 +115,7 @@ export function ExpensesView({
           <Card key={cat}>
             <CardContent className="p-4">
               <p className="text-xs uppercase text-muted-foreground">
-                {CATEGORY_LABELS[cat] ?? cat}
+                {EXPENSE_CATEGORY_LABEL[cat as ExpenseCategory] ?? cat}
               </p>
               <p className="numeric mt-1.5 text-lg font-semibold">
                 {formatCurrency(total)}
@@ -169,7 +161,7 @@ export function ExpensesView({
                   <span className="text-muted-foreground">General</span>
                 )}
               </TableCell>
-              <TableCell>{CATEGORY_LABELS[e.category] ?? e.category}</TableCell>
+              <TableCell>{EXPENSE_CATEGORY_LABEL[e.category as ExpenseCategory] ?? e.category}</TableCell>
               <TableCell>{e.description ?? "—"}</TableCell>
               <TableCell className="numeric text-right">
                 {formatCurrency(e.amount_ars)}
@@ -235,7 +227,7 @@ export function ExpensesView({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
+                        {Object.entries(EXPENSE_CATEGORY_LABEL).map(([value, label]) => (
                           <SelectItem key={value} value={value}>
                             {label}
                           </SelectItem>
