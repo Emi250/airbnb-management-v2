@@ -56,7 +56,6 @@ export default async function PropertyDetailPage({
   const now = new Date();
   const ytd = sumRevenue(reservations, startOfYear(now), endOfDay(now));
   const monthRevenue = sumRevenue(reservations, startOfMonth(now), endOfMonth(now));
-  const monthExpenses = sumExpenses(expenses, startOfMonth(now), endOfMonth(now));
   const occYtd = occupancyRate(reservations, [property], startOfYear(now), endOfDay(now));
   const totalExpensesYtd = sumExpenses(expenses, startOfYear(now), endOfDay(now));
   const netYtd = ytd - totalExpensesYtd;
