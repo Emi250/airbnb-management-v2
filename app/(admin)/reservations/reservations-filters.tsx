@@ -3,7 +3,6 @@
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -11,8 +10,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ResetFiltersButton } from "@/components/ui/reset-filters-button";
 import { cn } from "@/lib/utils";
-import { Search, X } from "lucide-react";
+import { Search } from "lucide-react";
 import { STATUS_LABEL_PLURAL, SOURCE_LABEL } from "@/lib/reservation-options";
 import type {
   Property,
@@ -57,6 +57,15 @@ export function ReservationsFilters({ properties }: { properties: Property[] }) 
     router.replace(pathname);
     setQ("");
   }
+
+  const isDefaultFilter =
+    q === "" &&
+    status === "all" &&
+    source === "all" &&
+    paid === "all" &&
+    propertyIds.length === 0 &&
+    from === "" &&
+    to === "";
 
   return (
     <div className="mb-6 space-y-3 rounded-xl border border-border bg-card p-4">
@@ -158,10 +167,12 @@ export function ReservationsFilters({ properties }: { properties: Property[] }) 
             aria-label="Hasta"
           />
         </div>
-        <Button variant="ghost" size="sm" onClick={clearAll} className="md:col-span-1 self-end">
-          <X className="h-4 w-4" />
-          Limpiar
-        </Button>
+        <ResetFiltersButton
+          onClick={clearAll}
+          disabled={isDefaultFilter}
+          className="md:col-span-1 self-end"
+          label="Restablecer"
+        />
       </div>
     </div>
   );

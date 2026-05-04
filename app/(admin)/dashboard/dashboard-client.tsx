@@ -40,6 +40,7 @@ import { RevenueDonut } from "@/components/charts/revenue-donut";
 import { TopGuestsBar } from "@/components/charts/top-guests-bar";
 import { SourceBar } from "@/components/charts/source-bar";
 import { OccupancyHeatmap } from "@/components/charts/occupancy-heatmap";
+import { ResetFiltersButton } from "@/components/ui/reset-filters-button";
 import { cn } from "@/lib/utils";
 import {
   DollarSign,
@@ -213,6 +214,18 @@ export function DashboardClient({
     [filteredRes, filteredProps]
   );
 
+  const isDefaultFilter =
+    rangeSel.kind === "preset" &&
+    rangeSel.value === "thisMonth" &&
+    selectedProps.size === properties.length &&
+    currency === "ARS";
+
+  function resetFilters() {
+    setRangeSel({ kind: "preset", value: "thisMonth" });
+    setSelectedProps(new Set(properties.map((p) => p.id)));
+    setCurrency("ARS");
+  }
+
   function fmt(n: number) {
     return formatCurrency(n, currency, rate);
   }
@@ -316,6 +329,12 @@ export function DashboardClient({
                 </button>
               ))}
             </div>
+
+            <ResetFiltersButton
+              onClick={resetFilters}
+              disabled={isDefaultFilter}
+              label="Restablecer"
+            />
           </div>
         </div>
       </div>
