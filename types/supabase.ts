@@ -6,7 +6,14 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 
 export type ReservationStatus = "confirmed" | "pending" | "cancelled" | "completed";
 export type ReservationSource = "airbnb" | "booking" | "direct" | "other";
-export type ExpenseCategory = "cleaning" | "maintenance" | "utilities" | "supplies" | "tax" | "other";
+export type ExpenseCategory =
+  | "cleaning"
+  | "maintenance"
+  | "utilities"
+  | "supplies"
+  | "tax"
+  | "other"
+  | "fixed";
 export type UserRole = "admin" | "caretaker";
 
 type PropertyRow = {
@@ -130,6 +137,38 @@ type UserRoleRowDb = {
 type UserRoleInsert = UserRoleRowDb;
 type UserRoleUpdate = Partial<UserRoleRowDb>;
 
+type FixedExpenseItemRow = {
+  id: string;
+  label: string;
+  position: number;
+  active: boolean;
+  created_at: string;
+};
+type FixedExpenseItemInsert = {
+  id?: string;
+  label: string;
+  position?: number;
+  active?: boolean;
+  created_at?: string;
+};
+type FixedExpenseItemUpdate = Partial<FixedExpenseItemInsert>;
+
+type FixedExpenseCheckRow = {
+  id: string;
+  item_id: string;
+  period: string;
+  expense_id: string | null;
+  paid_at: string;
+};
+type FixedExpenseCheckInsert = {
+  id?: string;
+  item_id: string;
+  period: string;
+  expense_id?: string | null;
+  paid_at?: string;
+};
+type FixedExpenseCheckUpdate = Partial<FixedExpenseCheckInsert>;
+
 type CaretakerAgendaRowDb = {
   id: string;
   check_in: string;
@@ -217,6 +256,33 @@ export type Database = {
         Update: UserRoleUpdate;
         Relationships: Relationships;
       };
+      fixed_expense_items: {
+        Row: FixedExpenseItemRow;
+        Insert: FixedExpenseItemInsert;
+        Update: FixedExpenseItemUpdate;
+        Relationships: Relationships;
+      };
+      fixed_expense_checks: {
+        Row: FixedExpenseCheckRow;
+        Insert: FixedExpenseCheckInsert;
+        Update: FixedExpenseCheckUpdate;
+        Relationships: [
+          {
+            foreignKeyName: "fixed_expense_checks_item_id_fkey";
+            columns: ["item_id"];
+            isOneToOne: false;
+            referencedRelation: "fixed_expense_items";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "fixed_expense_checks_expense_id_fkey";
+            columns: ["expense_id"];
+            isOneToOne: false;
+            referencedRelation: "expenses";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
     };
     Views: {
       caretaker_agenda: {
@@ -242,3 +308,5 @@ export type Expense = ExpenseRow;
 export type ExchangeRate = ExchangeRateRow;
 export type UserRoleRow = UserRoleRowDb;
 export type CaretakerAgendaRow = CaretakerAgendaRowDb;
+export type FixedExpenseItem = FixedExpenseItemRow;
+export type FixedExpenseCheck = FixedExpenseCheckRow;

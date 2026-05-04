@@ -32,4 +32,5 @@ export const EXPENSE_CATEGORY_LABEL: Record<ExpenseCategory, string> = {
   supplies: "Insumos",
   tax: "Impuestos",
   other: "Otro",
+  fixed: "Gasto Fijo",
 };

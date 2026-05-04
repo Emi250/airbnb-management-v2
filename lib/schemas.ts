@@ -61,12 +61,35 @@ export type GuestInput = z.infer<typeof guestSchema>;
 export const expenseSchema = z.object({
   property_id: z.string().uuid().nullable().optional(),
   date: z.string().min(1, "Fecha requerida"),
-  category: z.enum(["cleaning", "maintenance", "utilities", "supplies", "tax", "other"]),
+  category: z.enum([
+    "cleaning",
+    "maintenance",
+    "utilities",
+    "supplies",
+    "tax",
+    "other",
+    "fixed",
+  ]),
   amount_ars: z.coerce.number().min(0),
   description: z.string().optional(),
 });
 
 export type ExpenseInput = z.infer<typeof expenseSchema>;
+
+export const fixedExpenseItemSchema = z.object({
+  label: z.string().min(1, "Nombre requerido").max(80, "Máximo 80 caracteres"),
+});
+
+export type FixedExpenseItemInput = z.infer<typeof fixedExpenseItemSchema>;
+
+export const fixedExpenseMarkSchema = z.object({
+  item_id: z.string().uuid(),
+  period: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Período inválido"),
+  amount_ars: z.coerce.number().min(0, "Importe inválido"),
+  property_id: z.string().uuid().nullable().optional(),
+});
+
+export type FixedExpenseMarkInput = z.infer<typeof fixedExpenseMarkSchema>;
 
 export const exchangeRateSchema = z.object({
   ars_per_usd: z.coerce.number().min(0),
