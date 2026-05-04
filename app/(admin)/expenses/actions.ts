@@ -1,23 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
 import { expenseSchema, type ExpenseInput } from "@/lib/schemas";
-
-async function ensureAdmin() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("No autenticado");
-  const { data } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", user.id)
-    .maybeSingle();
-  if (data?.role !== "admin") throw new Error("Acceso restringido");
-  return supabase;
-}
+import { ensureAdmin } from "./_admin";
 
 export async function createExpenseAction(
   input: ExpenseInput
