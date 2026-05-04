@@ -4,6 +4,8 @@ import { useEffect, useId, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Plus, ChevronDown, ChevronRight, Search, Phone } from "lucide-react";
+import { addMonths, format, parseISO, subMonths } from "date-fns";
+import { es } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -13,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ResetFiltersButton } from "@/components/ui/reset-filters-button";
 import { cn } from "@/lib/utils";
 import { formatCurrency, formatDateLong, formatDateShort, telLink } from "@/lib/format";
 import { STATUS_LABEL_PLURAL } from "@/lib/reservation-options";
@@ -34,13 +37,40 @@ export function CalendarView({
   const pathname = usePathname();
   const sp = useSearchParams();
 
+  const defaultMonth = today.slice(0, 7);
   const urlSearch = sp.get("q") ?? "";
   const statusFilter = sp.get("status") ?? STATUS_DEFAULT;
   const showPast = sp.get("past") === "1";
+  const monthFilter = sp.get("month") ?? defaultMonth;
 
   // Local input mirrors URL but is controlled separately to avoid jank per keystroke.
   const [searchInput, setSearchInput] = useState(urlSearch);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+
+  const monthOptions = useMemo(() => {
+    const anchor = parseISO(`${defaultMonth}-01`);
+    const months: { value: string; label: string }[] = [];
+    for (let i = 12; i >= 1; i--) {
+      const d = subMonths(anchor, i);
+      months.push({ value: format(d, "yyyy-MM"), label: format(d, "MMMM yyyy", { locale: es }) });
+    }
+    months.push({ value: defaultMonth, label: format(anchor, "MMMM yyyy", { locale: es }) });
+    for (let i = 1; i <= 6; i++) {
+      const d = addMonths(anchor, i);
+      months.push({ value: format(d, "yyyy-MM"), label: format(d, "MMMM yyyy", { locale: es }) });
+    }
+    return months;
+  }, [defaultMonth]);
+
+  const monthRange = useMemo(() => {
+    const startStr = `${monthFilter}-01`;
+    const start = parseISO(startStr);
+    const end = addMonths(start, 1);
+    return {
+      start: startStr,
+      end: format(end, "yyyy-MM-dd"),
+    };
+  }, [monthFilter]);
 
   // Sync URL when user pauses typing.
   useEffect(() => {
@@ -59,7 +89,12 @@ export function CalendarView({
 
   function setParam(key: string, value: string | null) {
     const params = new URLSearchParams(sp.toString());
-    if (value === null || value === "" || value === STATUS_DEFAULT) {
+    const isDefaultValue =
+      value === null ||
+      value === "" ||
+      (key === "status" && value === STATUS_DEFAULT) ||
+      (key === "month" && value === defaultMonth);
+    if (isDefaultValue) {
       params.delete(key);
     } else {
       params.set(key, value);
@@ -67,6 +102,17 @@ export function CalendarView({
     const qs = params.toString();
     router.replace(qs ? `${pathname}?${qs}` : pathname);
   }
+
+  function resetFilters() {
+    router.replace(pathname);
+    setSearchInput("");
+  }
+
+  const isDefaultFilter =
+    urlSearch === "" &&
+    statusFilter === STATUS_DEFAULT &&
+    !showPast &&
+    monthFilter === defaultMonth;
 
   const filtered = useMemo(() => {
     return reservations.filter((r) => {
@@ -78,6 +124,9 @@ export function CalendarView({
       )
         return false;
       if (!showPast && r.check_out < today) return false;
+      // Mes seleccionado: incluir reservas que se solapan con [monthRange.start, monthRange.end)
+      if (r.check_in >= monthRange.end) return false;
+      if (r.check_out <= monthRange.start) return false;
       if (urlSearch) {
         const s = urlSearch.toLowerCase();
         const matchGuest = r.guest?.name?.toLowerCase().includes(s);
@@ -86,7 +135,7 @@ export function CalendarView({
       }
       return true;
     });
-  }, [reservations, statusFilter, showPast, today, urlSearch]);
+  }, [reservations, statusFilter, showPast, today, urlSearch, monthRange]);
 
   const grouped = useMemo(() => {
     return properties.map((p) => ({
@@ -132,6 +181,19 @@ export function CalendarView({
           />
         </div>
 
+        <Select value={monthFilter} onValueChange={(v) => setParam("month", v)}>
+          <SelectTrigger className="w-[170px] capitalize" aria-label="Filtrar por mes">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {monthOptions.map((m) => (
+              <SelectItem key={m.value} value={m.value} className="capitalize">
+                {m.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
         <Select value={statusFilter} onValueChange={(v) => setParam("status", v)}>
           <SelectTrigger className="w-[160px]" aria-label="Filtrar por estado">
             <SelectValue />
@@ -163,6 +225,8 @@ export function CalendarView({
         >
           {showPast ? "✓ " : ""}Mostrar pasadas
         </button>
+
+        <ResetFiltersButton onClick={resetFilters} disabled={isDefaultFilter} />
 
         <p
           className="ml-auto text-xs text-muted-foreground hidden sm:block"

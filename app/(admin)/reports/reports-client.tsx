@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { startOfMonth, endOfMonth, startOfYear, endOfYear, parseISO } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ResetFiltersButton } from "@/components/ui/reset-filters-button";
 import { formatCurrency, formatDateShort } from "@/lib/format";
 import { Download } from "lucide-react";
 import type { Property } from "@/types/supabase";
@@ -51,10 +52,21 @@ export function ReportsClient({
   properties: Property[];
   expenses: ExpenseRow[];
 }) {
-  const today = new Date();
-  const [month, setMonth] = useState(today.toISOString().slice(0, 7));
-  const [year, setYear] = useState(String(today.getFullYear()));
+  const today = useMemo(() => new Date(), []);
+  const defaultMonth = useMemo(() => today.toISOString().slice(0, 7), [today]);
+  const defaultYear = useMemo(() => String(today.getFullYear()), [today]);
+  const [month, setMonth] = useState(defaultMonth);
+  const [year, setYear] = useState(defaultYear);
   const [propertyId, setPropertyId] = useState<string>("all");
+
+  const isDefaultFilter =
+    month === defaultMonth && year === defaultYear && propertyId === "all";
+
+  function resetFilters() {
+    setMonth(defaultMonth);
+    setYear(defaultYear);
+    setPropertyId("all");
+  }
 
   function downloadCsv(filename: string, header: string[], rows: (string | number)[][]) {
     const csv = [
@@ -177,7 +189,14 @@ export function ReportsClient({
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-3">
+    <div className="space-y-6">
+      <div className="flex items-center justify-end">
+        <ResetFiltersButton
+          onClick={resetFilters}
+          disabled={isDefaultFilter}
+        />
+      </div>
+      <div className="grid gap-6 lg:grid-cols-3">
       <Card>
         <CardHeader>
           <CardTitle>Reporte mensual por propiedad</CardTitle>
@@ -255,6 +274,7 @@ export function ReportsClient({
           <PreviewMonthly reservations={reservations} month={month} propertyId={propertyId} />
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }
