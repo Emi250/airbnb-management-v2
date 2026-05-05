@@ -98,6 +98,17 @@ export const exchangeRateSchema = z.object({
 
 export type ExchangeRateInput = z.infer<typeof exchangeRateSchema>;
 
+export const monthlyTargetSchema = z.object({
+  property_id: z.string().uuid({ message: "Propiedad inválida" }),
+  month: z
+    .string()
+    .regex(/^\d{4}-\d{2}-01$/, "Mes inválido — usar formato yyyy-MM-01"),
+  target_revenue_ars: z.coerce.number().min(0, "El objetivo no puede ser negativo"),
+  target_occupancy: z.coerce.number().min(0).max(100).optional().nullable(),
+});
+
+export type MonthlyTargetInput = z.infer<typeof monthlyTargetSchema>;
+
 export const loginSchema = z.object({
   email: z.string().email("Email inválido"),
   password: z.string().min(6, "Mínimo 6 caracteres"),
