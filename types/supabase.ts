@@ -14,7 +14,7 @@ export type ExpenseCategory =
   | "tax"
   | "other"
   | "fixed";
-export type UserRole = "admin" | "caretaker";
+export type UserRole = "admin" | "caretaker" | "manager";
 
 type PropertyRow = {
   id: string;
@@ -169,6 +169,26 @@ type FixedExpenseCheckInsert = {
 };
 type FixedExpenseCheckUpdate = Partial<FixedExpenseCheckInsert>;
 
+type MonthlyTargetRow = {
+  id: string;
+  property_id: string;
+  month: string;
+  target_revenue_ars: number;
+  target_occupancy: number | null;
+  created_at: string;
+  updated_at: string;
+};
+type MonthlyTargetInsert = {
+  id?: string;
+  property_id: string;
+  month: string;
+  target_revenue_ars: number;
+  target_occupancy?: number | null;
+  created_at?: string;
+  updated_at?: string;
+};
+type MonthlyTargetUpdate = Partial<MonthlyTargetInsert>;
+
 type CaretakerAgendaRowDb = {
   id: string;
   check_in: string;
@@ -283,6 +303,20 @@ export type Database = {
           }
         ];
       };
+      monthly_targets: {
+        Row: MonthlyTargetRow;
+        Insert: MonthlyTargetInsert;
+        Update: MonthlyTargetUpdate;
+        Relationships: [
+          {
+            foreignKeyName: "monthly_targets_property_id_fkey";
+            columns: ["property_id"];
+            isOneToOne: false;
+            referencedRelation: "properties";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
     };
     Views: {
       caretaker_agenda: {
@@ -310,3 +344,4 @@ export type UserRoleRow = UserRoleRowDb;
 export type CaretakerAgendaRow = CaretakerAgendaRowDb;
 export type FixedExpenseItem = FixedExpenseItemRow;
 export type FixedExpenseCheck = FixedExpenseCheckRow;
+export type MonthlyTarget = MonthlyTargetRow;

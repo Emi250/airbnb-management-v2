@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { expenseSchema, type ExpenseInput } from "@/lib/schemas";
-import { ensureAdmin } from "./_admin";
+import { ensureExpenseWriter } from "./_admin";
 
 export async function createExpenseAction(
   input: ExpenseInput
@@ -11,7 +11,7 @@ export async function createExpenseAction(
   if (!parsed.success)
     return { success: false, error: parsed.error.issues[0]?.message ?? "Datos inválidos" };
   try {
-    const supabase = await ensureAdmin();
+    const supabase = await ensureExpenseWriter();
     const { error } = await supabase.from("expenses").insert({
       property_id: parsed.data.property_id || null,
       date: parsed.data.date,
@@ -32,7 +32,7 @@ export async function deleteExpenseAction(
   id: string
 ): Promise<{ success: true } | { success: false; error: string }> {
   try {
-    const supabase = await ensureAdmin();
+    const supabase = await ensureExpenseWriter();
     const { error } = await supabase.from("expenses").delete().eq("id", id);
     if (error) return { success: false, error: error.message };
     revalidatePath("/expenses");

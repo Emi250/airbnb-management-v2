@@ -1,4 +1,4 @@
-import { differenceInDays, eachDayOfInterval, parseISO, startOfMonth, endOfMonth, format } from "date-fns";
+import { differenceInDays, parseISO, startOfMonth, endOfMonth, format } from "date-fns";
 import { es } from "date-fns/locale";
 
 type Reservation = {
@@ -173,54 +173,3 @@ export function revenueByPropertyYTD(reservations: Reservation[], properties: Pr
   }));
 }
 
-export function topGuests(
-  reservations: Reservation[],
-  guests: { id: string; name: string }[],
-  limit = 10
-) {
-  const totals = new Map<string, number>();
-  for (const r of reservations.filter(ACTIVE)) {
-    if (!r.guest_id) continue;
-    totals.set(r.guest_id, (totals.get(r.guest_id) ?? 0) + Number(r.total_amount_ars));
-  }
-  return Array.from(totals.entries())
-    .map(([id, total]) => ({
-      name: guests.find((g) => g.id === id)?.name ?? "—",
-      total,
-    }))
-    .sort((a, b) => b.total - a.total)
-    .slice(0, limit);
-}
-
-export function revenueBySource(reservations: Reservation[]) {
-  const sources = ["airbnb", "booking", "direct", "other"];
-  return sources.map((s) => ({
-    source: s.charAt(0).toUpperCase() + s.slice(1),
-    revenue: reservations
-      .filter(ACTIVE)
-      .filter((r) => r.source === s)
-      .reduce((acc, r) => acc + Number(r.total_amount_ars), 0),
-  }));
-}
-
-/** Per-day occupancy heatmap for the current year. */
-export function dailyOccupancy(reservations: Reservation[], properties: PropertyLite[]) {
-  const now = new Date();
-  const start = new Date(now.getFullYear(), 0, 1);
-  const end = new Date(now.getFullYear(), 11, 31);
-  const days = eachDayOfInterval({ start, end });
-  return days.map((d) => {
-    let occ = 0;
-    for (const r of reservations.filter(ACTIVE)) {
-      const ci = parseISO(r.check_in);
-      const co = parseISO(r.check_out);
-      if (d >= ci && d < co) occ += 1;
-    }
-    return {
-      date: format(d, "yyyy-MM-dd"),
-      occupied: occ,
-      capacity: properties.length,
-      ratio: properties.length > 0 ? occ / properties.length : 0,
-    };
-  });
-}

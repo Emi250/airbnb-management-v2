@@ -20,29 +20,33 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { signOutAction } from "@/app/(auth)/login/actions";
 import { useTheme } from "@/components/theme-provider";
+import type { UserRole } from "@/types/supabase";
 
-const NAV = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/calendar", label: "Calendario", icon: Calendar },
-  { href: "/reservations", label: "Reservas", icon: ListChecks },
-  { href: "/properties", label: "Propiedades", icon: Building2 },
-  { href: "/guests", label: "Huéspedes", icon: Users },
-  { href: "/expenses", label: "Gastos", icon: Receipt },
-  { href: "/reports", label: "Reportes", icon: FileText },
-  { href: "/settings", label: "Ajustes", icon: Settings },
+const NAV: { href: string; label: string; icon: typeof LayoutDashboard; roles: UserRole[] }[] = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["admin"] },
+  { href: "/calendar", label: "Calendario", icon: Calendar, roles: ["admin", "manager"] },
+  { href: "/reservations", label: "Reservas", icon: ListChecks, roles: ["admin"] },
+  { href: "/properties", label: "Propiedades", icon: Building2, roles: ["admin"] },
+  { href: "/guests", label: "Huéspedes", icon: Users, roles: ["admin"] },
+  { href: "/expenses", label: "Gastos", icon: Receipt, roles: ["admin", "manager"] },
+  { href: "/reports", label: "Reportes", icon: FileText, roles: ["admin"] },
+  { href: "/settings", label: "Ajustes", icon: Settings, roles: ["admin"] },
 ];
 
 export function Sidebar({
   displayName,
+  role,
   mobileOpen,
   onMobileClose,
 }: {
   displayName: string;
+  role: UserRole;
   mobileOpen: boolean;
   onMobileClose: () => void;
 }) {
   const pathname = usePathname();
   const { theme, toggle } = useTheme();
+  const items = NAV.filter((n) => n.roles.includes(role));
 
   return (
     <>
@@ -81,7 +85,7 @@ export function Sidebar({
         </div>
 
         <nav className="flex-1 space-y-0.5 px-3 py-4">
-          {NAV.map(({ href, label, icon: Icon }) => {
+          {items.map(({ href, label, icon: Icon }) => {
             const active = pathname === href || pathname.startsWith(href + "/");
             return (
               <Link

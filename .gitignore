@@ -14,3 +14,6 @@ coverage/
 
 # Local Claude Code config (settings, symlinked skills)
 .claude/
+
+# Supabase CLI cache (auto-created by `npx supabase ...`)
+supabase/.temp/

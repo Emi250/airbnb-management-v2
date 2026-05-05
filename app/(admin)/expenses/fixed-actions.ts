@@ -7,7 +7,7 @@ import {
   type FixedExpenseItemInput,
   type FixedExpenseMarkInput,
 } from "@/lib/schemas";
-import { ensureAdmin } from "./_admin";
+import { ensureExpenseWriter } from "./_admin";
 
 type Result = { success: true } | { success: false; error: string };
 
@@ -23,7 +23,7 @@ export async function addFixedItemAction(
   if (!parsed.success)
     return { success: false, error: parsed.error.issues[0]?.message ?? "Datos inválidos" };
   try {
-    const supabase = await ensureAdmin();
+    const supabase = await ensureExpenseWriter();
     const { data: maxRow } = await supabase
       .from("fixed_expense_items")
       .select("position")
@@ -44,7 +44,7 @@ export async function addFixedItemAction(
 
 export async function removeFixedItemAction(id: string): Promise<Result> {
   try {
-    const supabase = await ensureAdmin();
+    const supabase = await ensureExpenseWriter();
     const { error } = await supabase.from("fixed_expense_items").delete().eq("id", id);
     if (error) return { success: false, error: error.message };
     revalidate();
@@ -61,7 +61,7 @@ export async function markFixedPaidAction(
   if (!parsed.success)
     return { success: false, error: parsed.error.issues[0]?.message ?? "Datos inválidos" };
   try {
-    const supabase = await ensureAdmin();
+    const supabase = await ensureExpenseWriter();
 
     const { data: item, error: itemErr } = await supabase
       .from("fixed_expense_items")
@@ -113,7 +113,7 @@ export async function unmarkFixedPaidAction(
   period: string
 ): Promise<Result> {
   try {
-    const supabase = await ensureAdmin();
+    const supabase = await ensureExpenseWriter();
     const { data: check } = await supabase
       .from("fixed_expense_checks")
       .select("id, expense_id")

@@ -4,11 +4,11 @@ import { DashboardClient } from "./dashboard-client";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
-  const [resR, propR, expR, guestR, rateR] = await Promise.all([
+  const [resR, propR, expR, targetsR, rateR] = await Promise.all([
     supabase.from("reservations").select("*").order("check_in", { ascending: true }),
     supabase.from("properties").select("*").order("name"),
     supabase.from("expenses").select("*").order("date", { ascending: true }),
-    supabase.from("guests").select("id,name").order("name"),
+    supabase.from("monthly_targets").select("*"),
     supabase
       .from("exchange_rates")
       .select("*")
@@ -19,12 +19,12 @@ export default async function DashboardPage() {
 
   return (
     <div>
-      <PageHeader title="Dashboard" description="Resumen financiero y de ocupación" />
+      <PageHeader title="Dashboard" />
       <DashboardClient
         reservations={resR.data ?? []}
         properties={propR.data ?? []}
         expenses={expR.data ?? []}
-        guests={guestR.data ?? []}
+        targets={targetsR.data ?? []}
         rate={
           rateR.data ?? {
             id: "",
