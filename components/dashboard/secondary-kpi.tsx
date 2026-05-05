@@ -16,11 +16,11 @@ export function SecondaryKpi({
 }) {
   return (
     <Card>
-      <CardContent className="p-4 space-y-1">
+      <CardContent className="p-4 space-y-1 min-w-0">
         <p className="text-xs text-muted-foreground">{label}</p>
         <p
           className={cn(
-            "text-2xl font-semibold tabular-nums tracking-tight",
+            "text-xl lg:text-2xl font-semibold tabular-nums tracking-tight truncate",
             accent === "positive" && "text-success",
             accent === "negative" && "text-destructive"
           )}

@@ -6,7 +6,8 @@ export type Currency = "ARS" | "USD" | "EUR";
 export function formatCurrency(
   amountArs: number,
   currency: Currency = "ARS",
-  rates?: { ars_per_usd: number; ars_per_eur: number }
+  rates?: { ars_per_usd: number; ars_per_eur: number },
+  fractionDigits = 2
 ): string {
   let value = amountArs;
   if (currency === "USD" && rates) value = amountArs / rates.ars_per_usd;
@@ -15,8 +16,8 @@ export function formatCurrency(
   return new Intl.NumberFormat("es-AR", {
     style: "currency",
     currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
   }).format(value);
 }
 

@@ -42,7 +42,9 @@ export type PulsoSectionProps = {
 };
 
 function fmtMoney(value: number, currency: Currency, rate: ExchangeRate): string {
-  return formatCurrency(value, currency, rate);
+  // KPI displays drop decimals — financial dashboards don't need cents,
+  // and full precision overflows the card at desktop widths.
+  return formatCurrency(value, currency, rate, 0);
 }
 
 function fmtMomDelta(delta: number | null): {

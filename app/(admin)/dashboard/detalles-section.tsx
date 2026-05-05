@@ -25,7 +25,7 @@ export function DetallesSection({
   rate,
 }: DetallesSectionProps) {
   function fmt(n: number) {
-    return empty ? "—" : formatCurrency(n, currency, rate);
+    return empty ? "—" : formatCurrency(n, currency, rate, 0);
   }
 
   return (
