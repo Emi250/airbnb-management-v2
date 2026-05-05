@@ -40,20 +40,20 @@ export function HeroKpi({
 
   return (
     <Card className="h-full">
-      <CardContent className="p-5 md:p-6 flex flex-col gap-3">
+      <CardContent className="p-5 md:p-6 flex flex-col gap-3 min-w-0">
         {/* Label */}
         <p className="text-sm font-medium text-muted-foreground">{label}</p>
 
         {/* Big number */}
-        <div>
+        <div className="min-w-0">
           {loading ? (
-            <Skeleton className="h-10 w-32 md:h-12 md:w-40" />
+            <Skeleton className="h-9 w-32 lg:h-10 lg:w-40" />
           ) : isEmpty ? (
-            <p className="text-4xl md:text-5xl font-semibold tracking-tight tabular-nums text-muted-foreground">
+            <p className="text-3xl lg:text-4xl font-semibold tracking-tight tabular-nums text-muted-foreground">
               —
             </p>
           ) : (
-            <p className="text-4xl md:text-5xl font-semibold tracking-tight tabular-nums">
+            <p className="text-3xl lg:text-4xl font-semibold tracking-tight tabular-nums truncate">
               {value}
             </p>
           )}
