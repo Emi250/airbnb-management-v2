@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 
-export async function ensureAdmin() {
+export async function ensureExpenseWriter() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -11,6 +11,8 @@ export async function ensureAdmin() {
     .select("role")
     .eq("user_id", user.id)
     .maybeSingle();
-  if (data?.role !== "admin") throw new Error("Acceso restringido");
+  if (data?.role !== "admin" && data?.role !== "manager") {
+    throw new Error("Acceso restringido");
+  }
   return supabase;
 }

@@ -63,15 +63,29 @@ export async function updateSession(request: NextRequest) {
         console.error("[middleware] user_roles lookup failed", err);
       }
 
+      const isManagerAllowed =
+        pathname.startsWith("/calendar") || pathname.startsWith("/expenses");
+
       if (isAuthPage) {
         const url = request.nextUrl.clone();
-        url.pathname = role === "caretaker" ? "/agenda" : "/dashboard";
+        url.pathname =
+          role === "caretaker"
+            ? "/agenda"
+            : role === "manager"
+              ? "/calendar"
+              : "/dashboard";
         return NextResponse.redirect(url);
       }
 
       if (role === "caretaker" && !pathname.startsWith("/agenda")) {
         const url = request.nextUrl.clone();
         url.pathname = "/agenda";
+        return NextResponse.redirect(url);
+      }
+
+      if (role === "manager" && !isManagerAllowed) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/calendar";
         return NextResponse.redirect(url);
       }
 

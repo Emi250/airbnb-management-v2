@@ -16,10 +16,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     .maybeSingle();
 
   if (!roleRow) redirect("/login?error=no_role");
-  if (roleRow.role !== "admin") redirect("/agenda");
+  if (roleRow.role !== "admin" && roleRow.role !== "manager") redirect("/agenda");
 
   return (
-    <AdminShell displayName={roleRow.display_name ?? user.email ?? "Usuario"}>
+    <AdminShell
+      displayName={roleRow.display_name ?? user.email ?? "Usuario"}
+      role={roleRow.role}
+    >
       {children}
     </AdminShell>
   );

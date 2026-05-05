@@ -3,12 +3,15 @@
 import { useState } from "react";
 import { Sidebar } from "@/components/sidebar";
 import { MobileHeader } from "@/components/mobile-header";
+import type { UserRole } from "@/types/supabase";
 
 export function AdminShell({
   displayName,
+  role,
   children,
 }: {
   displayName: string;
+  role: UserRole;
   children: React.ReactNode;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -17,6 +20,7 @@ export function AdminShell({
     <div className="flex min-h-screen">
       <Sidebar
         displayName={displayName}
+        role={role}
         mobileOpen={mobileOpen}
         onMobileClose={() => setMobileOpen(false)}
       />

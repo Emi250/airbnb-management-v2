@@ -28,10 +28,12 @@ export function CalendarView({
   properties,
   reservations,
   today,
+  canWrite = true,
 }: {
   properties: Property[];
   reservations: ReservationWithRefs[];
   today: string;
+  canWrite?: boolean;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -267,15 +269,17 @@ export function CalendarView({
                     {rows.length} {rows.length === 1 ? "reserva" : "reservas"}
                   </span>
                 </button>
-                <Button asChild variant="ghost" size="sm" className="h-8">
-                  <Link
-                    href={`/reservations/new?property=${property.id}`}
-                    aria-label={`Nueva reserva en ${property.name}`}
-                  >
-                    <Plus className="h-4 w-4" aria-hidden="true" />
-                    <span className="hidden sm:inline">Nueva</span>
-                  </Link>
-                </Button>
+                {canWrite && (
+                  <Button asChild variant="ghost" size="sm" className="h-8">
+                    <Link
+                      href={`/reservations/new?property=${property.id}`}
+                      aria-label={`Nueva reserva en ${property.name}`}
+                    >
+                      <Plus className="h-4 w-4" aria-hidden="true" />
+                      <span className="hidden sm:inline">Nueva</span>
+                    </Link>
+                  </Button>
+                )}
               </header>
 
               <div id={panelId} hidden={isCollapsed}>
@@ -287,8 +291,18 @@ export function CalendarView({
                       </div>
                     ) : (
                       <>
-                        <DesktopTable rows={rows} property={property} today={today} />
-                        <MobileCards rows={rows} property={property} today={today} />
+                        <DesktopTable
+                          rows={rows}
+                          property={property}
+                          today={today}
+                          canWrite={canWrite}
+                        />
+                        <MobileCards
+                          rows={rows}
+                          property={property}
+                          today={today}
+                          canWrite={canWrite}
+                        />
                       </>
                     )}
                   </>
@@ -322,11 +336,14 @@ function DesktopTable({
   rows,
   property,
   today,
+  canWrite,
 }: {
   rows: ReservationWithRefs[];
   property: Property;
   today: string;
+  canWrite: boolean;
 }) {
+  const hrefFor = (id: string) => (canWrite ? `/reservations/${id}` : null);
   return (
     <div className="hidden md:block overflow-x-auto rounded-lg border border-border bg-card">
       <table className="w-full text-sm" style={{ tableLayout: "fixed" }}>
@@ -354,7 +371,7 @@ function DesktopTable({
                   isPast && "opacity-60"
                 )}
               >
-                <Cell href={`/reservations/${r.id}`}>
+                <Cell href={hrefFor(r.id)}>
                   <div className="flex min-w-0 items-center gap-2">
                     <PropertyTag property={property} />
                     {isToday && (
@@ -364,24 +381,24 @@ function DesktopTable({
                     )}
                   </div>
                 </Cell>
-                <Cell href={`/reservations/${r.id}`}>
+                <Cell href={hrefFor(r.id)}>
                   <span className="block truncate">{formatDateLong(r.check_in)}</span>
                 </Cell>
-                <Cell href={`/reservations/${r.id}`}>
+                <Cell href={hrefFor(r.id)}>
                   <span className="block truncate">{formatDateLong(r.check_out)}</span>
                 </Cell>
-                <Cell href={`/reservations/${r.id}`}>
+                <Cell href={hrefFor(r.id)}>
                   <span className="block min-w-0 truncate font-medium">
                     {r.guest?.name ?? "—"}
                   </span>
                 </Cell>
-                <Cell href={`/reservations/${r.id}`} align="right">
+                <Cell href={hrefFor(r.id)} align="right">
                   <span className="numeric">{r.nights}</span>
                 </Cell>
-                <Cell href={`/reservations/${r.id}`} align="right">
+                <Cell href={hrefFor(r.id)} align="right">
                   <span className="numeric">{r.num_guests}</span>
                 </Cell>
-                <Cell href={`/reservations/${r.id}`} align="right">
+                <Cell href={hrefFor(r.id)} align="right">
                   <span className="numeric">{formatCurrency(r.total_amount_ars)}</span>
                 </Cell>
                 <td className="px-4 py-2.5">
@@ -402,11 +419,15 @@ function Cell({
   align,
 }: {
   children: React.ReactNode;
-  href: string;
+  href: string | null;
   align?: "right";
 }) {
+  const cellClass = cn("px-4 py-2.5", align === "right" && "text-right");
+  if (!href) {
+    return <td className={cellClass}>{children}</td>;
+  }
   return (
-    <td className={cn("px-4 py-2.5", align === "right" && "text-right")}>
+    <td className={cellClass}>
       <Link
         href={href}
         className="block min-w-0 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -444,10 +465,12 @@ function MobileCards({
   rows,
   property,
   today,
+  canWrite,
 }: {
   rows: ReservationWithRefs[];
   property: Property;
   today: string;
+  canWrite: boolean;
 }) {
   return (
     <div className="space-y-2 md:hidden">
@@ -468,12 +491,14 @@ function MobileCards({
               borderLeftColor: property.color_hex ?? "#A47148",
             }}
           >
-            {/* Full-card click target overlay */}
-            <Link
-              href={`/reservations/${r.id}`}
-              aria-label={ariaLabel}
-              className="absolute inset-0 z-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
-            />
+            {/* Full-card click target overlay (only when user has write access) */}
+            {canWrite && (
+              <Link
+                href={`/reservations/${r.id}`}
+                aria-label={ariaLabel}
+                className="absolute inset-0 z-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+              />
+            )}
 
             {/* Visual content sits above overlay but is non-interactive */}
             <div className="pointer-events-none relative z-[1] p-4">
