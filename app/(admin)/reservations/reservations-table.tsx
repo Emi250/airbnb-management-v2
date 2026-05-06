@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Download } from "lucide-react";
+import { Download, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -81,6 +81,9 @@ export function ReservationsTable({ rows }: { rows: ReservationWithRefs[] }) {
             <TableHead>Estado</TableHead>
             <TableHead>Pago</TableHead>
             <TableHead>Canal</TableHead>
+            <TableHead className="w-[80px] text-right">
+              <span className="sr-only">Acciones</span>
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -116,6 +119,17 @@ export function ReservationsTable({ rows }: { rows: ReservationWithRefs[] }) {
                 <PaidBadge paid={r.amount_paid_ars} total={r.total_amount_ars} />
               </TableCell>
               <TableCell className="capitalize">{r.source}</TableCell>
+              <TableCell className="text-right">
+                <Button asChild variant="ghost" size="sm">
+                  <Link
+                    href={`/reservations/${r.id}`}
+                    aria-label={`Editar reserva de ${r.guest?.name ?? "huésped"}`}
+                  >
+                    <Pencil className="h-4 w-4" />
+                    <span className="sr-only sm:not-sr-only">Editar</span>
+                  </Link>
+                </Button>
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
