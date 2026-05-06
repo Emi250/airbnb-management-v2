@@ -25,13 +25,18 @@ export async function sendTelegramMessage(args: SendArgs): Promise<SendResult> {
       }),
     });
 
-    if (!res.ok) {
-      const body = await res.text();
-      return { ok: false, error: `HTTP ${res.status}: ${body.slice(0, 300)}` };
+    const body = await res.text();
+    let parsed: { ok?: boolean; description?: string } = {};
+    try {
+      parsed = JSON.parse(body);
+    } catch {
+      // body no es JSON
     }
-    const json = (await res.json()) as { ok: boolean; description?: string };
-    if (!json.ok) {
-      return { ok: false, error: json.description ?? "Telegram API returned ok:false" };
+    if (!res.ok || !parsed.ok) {
+      return {
+        ok: false,
+        error: `HTTP ${res.status} ${parsed.description ?? body.slice(0, 300)}`,
+      };
     }
     return { ok: true };
   } catch (err) {
@@ -39,9 +44,11 @@ export async function sendTelegramMessage(args: SendArgs): Promise<SendResult> {
   }
 }
 
-// Escapa los caracteres reservados del modo Markdown legacy de Telegram. No
-// usamos MarkdownV2 porque la spec del usuario fue explícita: parse_mode = "Markdown".
-// Los caracteres a escapar son los que pueden abrir formato: _ * ` [
-export function escapeTelegramMarkdown(input: string): string {
-  return input.replace(/([_*`\[])/g, "\\$1");
+// Escapa los caracteres reservados de HTML para que el texto del usuario no
+// rompa el parse_mode='HTML' de Telegram.
+export function escapeTelegramHtml(input: string): string {
+  return input
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }

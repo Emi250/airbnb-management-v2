@@ -1,5 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { escapeTelegramMarkdown, sendTelegramMessage } from "@/lib/notifications/telegram";
+import { escapeTelegramHtml, sendTelegramMessage } from "@/lib/notifications/telegram";
 import { buildWhatsAppLink, normalizeArPhone } from "@/lib/notifications/whatsapp";
 
 const ARG_TZ = "America/Argentina/Cordoba";
@@ -62,21 +62,25 @@ function buildTelegramMessage(opts: {
   rawPhone: string | null;
   waLink: string | null;
 }): string {
-  const safeName = escapeTelegramMarkdown(opts.guestName);
-  const phoneDisplay = opts.rawPhone ? escapeTelegramMarkdown(opts.rawPhone) : "—";
+  const safeName = escapeTelegramHtml(opts.guestName);
+  const phoneDisplay = opts.rawPhone ? escapeTelegramHtml(opts.rawPhone) : "—";
+  const totalDisplay = escapeTelegramHtml(formatArs(opts.totalAmountArs));
 
   const lines = [
-    "🛎️ *Recordatorio de Check-in en 3 días*",
-    `👤 *Huésped:* ${safeName}`,
-    `🌙 *Noches:* ${opts.nights}`,
-    `👥 *Pax:* ${opts.numGuests}`,
-    `💰 *TOTAL A PAGAR:* ${formatArs(opts.totalAmountArs)}`,
-    `📱 *Teléfono:* ${phoneDisplay}`,
+    "🛎️ <b>Recordatorio de Check-in en 3 días</b>",
+    `👤 <b>Huésped:</b> ${safeName}`,
+    `🌙 <b>Noches:</b> ${opts.nights}`,
+    `👥 <b>Pax:</b> ${opts.numGuests}`,
+    `💰 <b>TOTAL A PAGAR:</b> ${totalDisplay}`,
+    `📱 <b>Teléfono:</b> ${phoneDisplay}`,
   ];
 
   if (opts.waLink) {
+    // El URL ya viene de encodeURIComponent y no contiene <, >, & o ".
+    // Igual lo pasamos por escapeTelegramHtml por defensa.
+    const safeHref = escapeTelegramHtml(opts.waLink);
     lines.push("");
-    lines.push(`👉 [Hacer clic aquí para enviar mensaje de bienvenida](${opts.waLink})`);
+    lines.push(`👉 <a href="${safeHref}">Hacer clic aquí para enviar mensaje de bienvenida</a>`);
   }
 
   return lines.join("\n");
@@ -136,7 +140,7 @@ export async function runCheckinReminders(): Promise<ReminderResult> {
       waLink,
     });
 
-    const send = await sendTelegramMessage({ chatId, text, parseMode: "Markdown" });
+    const send = await sendTelegramMessage({ chatId, text, parseMode: "HTML" });
     if (!send.ok) {
       result.errors.push({ reservationId: row.id, error: send.error });
       continue;
