@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { DatePicker } from "@/components/ui/date-picker";
 import { reservationSchema, type ReservationInput } from "@/lib/schemas";
 import { formatCurrency } from "@/lib/format";
 import { STATUS_LABEL, SOURCE_LABEL } from "@/lib/reservation-options";
@@ -214,17 +215,60 @@ export function ReservationForm({
           <div className="grid gap-5 md:grid-cols-3">
             <div className="space-y-2">
               <Label>Check-in *</Label>
-              <Input type="date" {...register("check_in")} />
+              <Controller
+                control={control}
+                name="check_in"
+                render={({ field }) => (
+                  <DatePicker
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="Elegir fecha"
+                    ariaLabel="Check-in"
+                  />
+                )}
+              />
               <FieldError message={errors.check_in?.message} />
             </div>
             <div className="space-y-2">
               <Label>Check-out *</Label>
-              <Input type="date" {...register("check_out")} />
+              <Controller
+                control={control}
+                name="check_out"
+                render={({ field }) => (
+                  <DatePicker
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="Elegir fecha"
+                    minDate={checkIn || undefined}
+                    ariaLabel="Check-out"
+                  />
+                )}
+              />
               <FieldError message={errors.check_out?.message} />
             </div>
             <div className="space-y-2">
               <Label>Huéspedes *</Label>
-              <Input type="number" min={1} {...register("num_guests")} />
+              <Controller
+                control={control}
+                name="num_guests"
+                render={({ field }) => (
+                  <Select
+                    value={field.value ? String(field.value) : ""}
+                    onValueChange={(v) => field.onChange(Number(v))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+                        <SelectItem key={n} value={String(n)}>
+                          {n} {n === 1 ? "huésped" : "huéspedes"}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
               <FieldError message={errors.num_guests?.message} />
             </div>
           </div>
