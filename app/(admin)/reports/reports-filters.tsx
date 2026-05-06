@@ -1,14 +1,14 @@
 "use client";
 
-import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { DatePicker } from "@/components/ui/date-picker";
 import { ResetFiltersButton } from "@/components/ui/reset-filters-button";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import type { Property } from "@/types/supabase";
 import {
   defaultRange,
   presetRange,
-  type DateRange,
   type PresetKey,
 } from "./reports-utils";
 
@@ -40,8 +40,24 @@ export function ReportsFilters({
     value.to === def.to &&
     value.propertyIds.length === 0;
 
-  function setRange(range: DateRange) {
-    onChange({ ...value, from: range.from, to: range.to });
+  function setFrom(next: string) {
+    if (!next) {
+      onChange({ ...value, from: "" });
+      return;
+    }
+    // Auto-correct: if "Hasta" is set and now precedes the new "Desde",
+    // push it forward so the range stays coherent.
+    const to = value.to && value.to < next ? next : value.to;
+    onChange({ ...value, from: next, to });
+  }
+
+  function setTo(next: string) {
+    if (!next) {
+      onChange({ ...value, to: "" });
+      return;
+    }
+    const from = value.from && value.from > next ? next : value.from;
+    onChange({ ...value, from, to: next });
   }
 
   function toggleProperty(id: string) {
@@ -116,19 +132,36 @@ export function ReportsFilters({
           })}
         </div>
 
-        <div className="flex items-center gap-2 sm:justify-end">
-          <DateRangePicker
-            from={value.from}
-            to={value.to}
-            onChange={setRange}
-            placeholder="Rango personalizado"
-            ariaLabel="Filtrar reportes por rango de fechas"
-            className="sm:w-[280px]"
-          />
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:items-end sm:justify-end">
+          <div className="space-y-1">
+            <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Desde
+            </Label>
+            <DatePicker
+              value={value.from}
+              onChange={setFrom}
+              placeholder="Fecha de inicio"
+              ariaLabel="Filtrar desde"
+              className="sm:w-[170px]"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Hasta
+            </Label>
+            <DatePicker
+              value={value.to}
+              onChange={setTo}
+              placeholder="Fecha de fin"
+              ariaLabel="Filtrar hasta"
+              className="sm:w-[170px]"
+            />
+          </div>
           <ResetFiltersButton
             onClick={reset}
             disabled={isDefault}
             label="Restablecer"
+            className="col-span-2 sm:col-auto"
           />
         </div>
       </div>
