@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const result = await runCheckinReminders();
+    console.log("[cron/checkin-reminder]", JSON.stringify(result));
     return NextResponse.json(result);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
