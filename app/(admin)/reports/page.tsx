@@ -7,7 +7,7 @@ export default async function ReportsPage() {
   const [resR, propR, expR] = await Promise.all([
     supabase
       .from("reservations")
-      .select(`*, property:properties(name), guest:guests(name)`)
+      .select(`*, property:properties(name, color_hex), guest:guests(name, country, phone)`)
       .order("check_in"),
     supabase.from("properties").select("*").order("name"),
     supabase.from("expenses").select(`*, property:properties(name)`).order("date"),
