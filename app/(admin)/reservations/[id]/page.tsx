@@ -19,7 +19,7 @@ export default async function ReservationDetailPage({
   if (!r) notFound();
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-4xl">
       <PageHeader
         title={`Reserva · ${r.guest?.name ?? "Sin huésped"}`}
         description={`${formatDateLong(r.check_in)} → ${formatDateLong(r.check_out)}`}

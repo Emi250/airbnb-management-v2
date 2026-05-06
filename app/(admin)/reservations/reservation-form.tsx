@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -20,6 +19,7 @@ import {
 import { reservationSchema, type ReservationInput } from "@/lib/schemas";
 import { formatCurrency } from "@/lib/format";
 import { STATUS_LABEL, SOURCE_LABEL } from "@/lib/reservation-options";
+import { cn } from "@/lib/utils";
 import {
   createReservationAction,
   updateReservationAction,
@@ -33,6 +33,48 @@ import type {
 } from "@/types/supabase";
 
 type Defaults = Partial<ReservationInput> & { id?: string };
+
+function SectionHeader({
+  step,
+  kicker,
+  title,
+  description,
+  trailing,
+}: {
+  step: string;
+  kicker: string;
+  title: string;
+  description?: string;
+  trailing?: React.ReactNode;
+}) {
+  return (
+    <header className="flex flex-wrap items-end justify-between gap-2">
+      <div className="space-y-1">
+        <p className="text-xs font-medium tabular-nums text-muted-foreground">
+          {step} · {kicker}
+        </p>
+        <h2 className="text-base font-semibold tracking-tight">{title}</h2>
+        {description && (
+          <p className="text-xs text-muted-foreground">{description}</p>
+        )}
+      </div>
+      {trailing}
+    </header>
+  );
+}
+
+function FieldError({ message }: { message?: string }) {
+  return (
+    <div aria-live="polite" className="min-h-0">
+      {message && (
+        <p className="flex items-center gap-1.5 text-xs text-destructive">
+          <span aria-hidden>•</span>
+          {message}
+        </p>
+      )}
+    </div>
+  );
+}
 
 export function ReservationForm({
   properties,
@@ -81,6 +123,8 @@ export function ReservationForm({
   const checkOut = watch("check_out");
   const total = Number(watch("total_amount_ars") ?? 0);
   const paid = Number(watch("amount_paid_ars") ?? 0);
+  const platformFee = Number(watch("platform_fee_ars") ?? 0);
+  const cleaningFee = Number(watch("cleaning_fee_ars") ?? 0);
 
   const nights = useMemo(() => {
     if (!checkIn || !checkOut) return 0;
@@ -90,6 +134,8 @@ export function ReservationForm({
 
   const balance = total - paid;
   const pricePerNight = nights > 0 ? total / nights : 0;
+  const cobrado = total > 0 && balance === 0;
+  const exceso = total > 0 && balance < 0;
 
   function onSubmit(values: ReservationInput) {
     startTransition(async () => {
@@ -123,110 +169,167 @@ export function ReservationForm({
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      <section className="rounded-xl border border-border bg-card p-6 space-y-4">
-        <h2 className="text-sm font-semibold uppercase text-muted-foreground">Propiedad y fechas</h2>
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 md:space-y-8">
+      {/* 01 · Reserva */}
+      <section className="space-y-6 rounded-xl border border-border bg-card p-6">
+        <SectionHeader
+          step="01"
+          kicker="Reserva"
+          title="Propiedad y estadía"
+          description="Definí qué propiedad y cuándo se ocupa."
+        />
 
-        <div className="grid gap-4 md:grid-cols-3">
-          <div className="space-y-2">
-            <Label>Propiedad *</Label>
-            <Controller
-              control={control}
-              name="property_id"
-              render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {properties.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        {p.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-            {errors.property_id && <p className="text-xs text-destructive">{errors.property_id.message}</p>}
+        <div className="space-y-2">
+          <Label>Propiedad *</Label>
+          <Controller
+            control={control}
+            name="property_id"
+            render={({ field }) => (
+              <Select value={field.value} onValueChange={field.onChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {properties.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
+          <FieldError message={errors.property_id?.message} />
+        </div>
+
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="text-sm font-medium tracking-tight">Estadía</h3>
+            {nights > 0 && (
+              <span className="rounded-full bg-muted/60 px-2 py-0.5 text-xs tabular-nums text-muted-foreground">
+                {nights} {nights === 1 ? "noche" : "noches"}
+              </span>
+            )}
           </div>
-          <div className="space-y-2">
-            <Label>Check-in *</Label>
-            <Input type="date" {...register("check_in")} />
-            {errors.check_in && <p className="text-xs text-destructive">{errors.check_in.message}</p>}
-          </div>
-          <div className="space-y-2">
-            <Label>Check-out *</Label>
-            <Input type="date" {...register("check_out")} />
-            {errors.check_out && <p className="text-xs text-destructive">{errors.check_out.message}</p>}
+          <div className="grid gap-5 md:grid-cols-3">
+            <div className="space-y-2">
+              <Label>Check-in *</Label>
+              <Input type="date" {...register("check_in")} />
+              <FieldError message={errors.check_in?.message} />
+            </div>
+            <div className="space-y-2">
+              <Label>Check-out *</Label>
+              <Input type="date" {...register("check_out")} />
+              <FieldError message={errors.check_out?.message} />
+            </div>
+            <div className="space-y-2">
+              <Label>Huéspedes *</Label>
+              <Input type="number" min={1} {...register("num_guests")} />
+              <FieldError message={errors.num_guests?.message} />
+            </div>
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
-          <div className="space-y-2">
-            <Label>Huéspedes *</Label>
-            <Input type="number" min={1} {...register("num_guests")} />
-          </div>
-          <div className="space-y-2">
-            <Label>Estado</Label>
-            <Controller
-              control={control}
-              name="status"
-              render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(Object.entries(STATUS_LABEL) as [ReservationStatus, string][]).map(
-                      ([value, label]) => (
-                        <SelectItem key={value} value={value}>
-                          {label}
-                        </SelectItem>
-                      )
-                    )}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Canal</Label>
-            <Controller
-              control={control}
-              name="source"
-              render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(Object.entries(SOURCE_LABEL) as [ReservationSource, string][]).map(
-                      ([value, label]) => (
-                        <SelectItem key={value} value={value}>
-                          {label}
-                        </SelectItem>
-                      )
-                    )}
-                  </SelectContent>
-                </Select>
-              )}
-            />
+        <div className="space-y-3">
+          <h3 className="text-sm font-medium tracking-tight">Clasificación</h3>
+          <div className="grid gap-5 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Estado</Label>
+              <Controller
+                control={control}
+                name="status"
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(Object.entries(STATUS_LABEL) as [ReservationStatus, string][]).map(
+                        ([value, label]) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        )
+                      )}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Canal</Label>
+              <Controller
+                control={control}
+                name="source"
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(Object.entries(SOURCE_LABEL) as [ReservationSource, string][]).map(
+                        ([value, label]) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        )
+                      )}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="rounded-xl border border-border bg-card p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold uppercase text-muted-foreground">Huésped</h2>
-          <div className="flex items-center gap-2 text-xs">
-            <Switch checked={createGuest} onCheckedChange={setCreateGuest} />
-            <span>Crear nuevo huésped</span>
-          </div>
-        </div>
+      {/* 02 · Huésped */}
+      <section className="space-y-6 rounded-xl border border-border bg-card p-6">
+        <SectionHeader
+          step="02"
+          kicker="Huésped"
+          title="Huésped"
+          description="Asociá un huésped existente o creá uno nuevo."
+          trailing={
+            <div className="inline-flex items-center rounded-full border border-border bg-muted/40 p-0.5 text-xs">
+              <button
+                type="button"
+                onClick={() => setCreateGuest(false)}
+                disabled={!guests.length}
+                className={cn(
+                  "rounded-full px-3 py-1 font-medium transition-colors",
+                  !createGuest
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-foreground/70 hover:bg-muted/60 hover:text-foreground",
+                  !guests.length && "cursor-not-allowed opacity-50 hover:text-muted-foreground"
+                )}
+              >
+                Existente
+              </button>
+              <button
+                type="button"
+                onClick={() => setCreateGuest(true)}
+                className={cn(
+                  "rounded-full px-3 py-1 font-medium transition-colors",
+                  createGuest
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-foreground/70 hover:bg-muted/60 hover:text-foreground"
+                )}
+              >
+                Nuevo
+              </button>
+            </div>
+          }
+        />
+
+        {!guests.length && (
+          <p className="text-xs text-muted-foreground">
+            Aún no tenés huéspedes guardados — completá los datos abajo.
+          </p>
+        )}
 
         {createGuest ? (
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-5 md:grid-cols-2">
             <div className="space-y-2">
               <Label>Nombre *</Label>
               <Input {...register("new_guest_name")} />
@@ -268,71 +371,128 @@ export function ReservationForm({
                 </Select>
               )}
             />
-            {errors.guest_id && <p className="text-xs text-destructive">{errors.guest_id.message}</p>}
+            <FieldError message={errors.guest_id?.message} />
           </div>
         )}
       </section>
 
-      <section className="rounded-xl border border-border bg-card p-6 space-y-4">
-        <h2 className="text-sm font-semibold uppercase text-muted-foreground">Importes (ARS)</h2>
-        <div className="grid gap-4 md:grid-cols-2">
+      {/* 03 · Pagos */}
+      <section className="space-y-6 rounded-xl border border-border bg-card p-6">
+        <SectionHeader
+          step="03"
+          kicker="Pagos"
+          title="Importes"
+          description="Todo en pesos. El saldo se calcula automáticamente."
+        />
+
+        <div className="grid gap-5 md:grid-cols-2">
           <div className="space-y-2">
             <Label>Monto total *</Label>
             <Input type="number" step="0.01" {...register("total_amount_ars")} />
+            <p aria-live="polite" className="text-xs tabular-nums text-muted-foreground">
+              {formatCurrency(total)}
+            </p>
           </div>
           <div className="space-y-2">
             <Label>Pagado</Label>
             <Input type="number" step="0.01" {...register("amount_paid_ars")} />
-            {errors.amount_paid_ars && (
-              <p className="text-xs text-destructive">{errors.amount_paid_ars.message}</p>
-            )}
+            <p aria-live="polite" className="text-xs tabular-nums text-muted-foreground">
+              {formatCurrency(paid)}
+            </p>
+            <FieldError message={errors.amount_paid_ars?.message} />
           </div>
           <div className="space-y-2">
             <Label>Comisión plataforma</Label>
             <Input type="number" step="0.01" {...register("platform_fee_ars")} />
+            <p aria-live="polite" className="text-xs tabular-nums text-muted-foreground">
+              {formatCurrency(platformFee)}
+            </p>
           </div>
           <div className="space-y-2">
             <Label>Limpieza</Label>
             <Input type="number" step="0.01" {...register("cleaning_fee_ars")} />
+            <p aria-live="polite" className="text-xs tabular-nums text-muted-foreground">
+              {formatCurrency(cleaningFee)}
+            </p>
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-3 rounded-lg border border-dashed border-border p-4 text-center">
-          <div>
-            <p className="text-xs uppercase text-muted-foreground">Noches</p>
-            <p className="numeric text-lg font-semibold">{nights}</p>
+        <div className="grid grid-cols-1 gap-4 rounded-xl bg-muted/50 p-5 sm:grid-cols-3">
+          <div className="space-y-1 text-center">
+            <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+              Noches
+            </p>
+            <p className="text-2xl font-semibold tabular-nums">
+              {nights > 0 ? nights : "—"}
+            </p>
           </div>
-          <div>
-            <p className="text-xs uppercase text-muted-foreground">Por noche</p>
-            <p className="numeric text-lg font-semibold">{formatCurrency(pricePerNight)}</p>
+          <div className="space-y-1 text-center">
+            <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+              Por noche
+            </p>
+            <p className="text-2xl font-semibold tabular-nums">
+              {nights > 0 ? formatCurrency(pricePerNight) : "—"}
+            </p>
           </div>
-          <div>
-            <p className="text-xs uppercase text-muted-foreground">Saldo</p>
-            <p className="numeric text-lg font-semibold">{formatCurrency(balance)}</p>
+          <div className="space-y-1 text-center">
+            <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+              Saldo
+            </p>
+            <p
+              className={cn(
+                "text-2xl font-semibold tabular-nums",
+                cobrado && "text-success",
+                exceso && "text-destructive"
+              )}
+            >
+              {total === 0 ? "—" : formatCurrency(Math.abs(balance))}
+            </p>
+            <p
+              className={cn(
+                "text-[10px] uppercase tracking-wider text-muted-foreground",
+                exceso && "text-destructive"
+              )}
+            >
+              {total === 0
+                ? "Cargá el total"
+                : exceso
+                  ? "Exceso"
+                  : cobrado
+                    ? "Cobrado"
+                    : "Pendiente"}
+            </p>
           </div>
         </div>
       </section>
 
-      <section className="rounded-xl border border-border bg-card p-6 space-y-4">
-        <h2 className="text-sm font-semibold uppercase text-muted-foreground">Notas</h2>
+      {/* 04 · Notas */}
+      <section className="space-y-3 border-t border-border pt-6">
+        <SectionHeader step="04" kicker="Notas" title="Notas internas" />
         <Textarea rows={3} {...register("notes")} placeholder="Información adicional..." />
       </section>
 
-      <div className="flex flex-wrap items-center justify-end gap-2">
+      <div className="flex flex-col-reverse gap-3 md:flex-row md:items-center md:justify-end">
         {mode === "edit" && (
           <Button
             type="button"
             variant="destructive"
             onClick={onCancelReservation}
             disabled={isPending}
+            className="w-full md:w-auto"
           >
             Cancelar reserva
           </Button>
         )}
-        <Button type="button" variant="ghost" onClick={() => router.back()} disabled={isPending}>
+        <Button
+          type="button"
+          variant="link"
+          onClick={() => router.back()}
+          disabled={isPending}
+          className="md:order-none"
+        >
           Volver
         </Button>
-        <Button type="submit" disabled={isPending}>
+        <Button type="submit" disabled={isPending} className="w-full md:w-auto">
           {isPending ? "Guardando..." : mode === "create" ? "Crear reserva" : "Guardar cambios"}
         </Button>
       </div>

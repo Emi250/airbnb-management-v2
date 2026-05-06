@@ -11,8 +11,11 @@ export default async function NewReservationPage({
   const [properties, guests] = await Promise.all([listProperties(), listGuests()]);
 
   return (
-    <div className="max-w-3xl">
-      <PageHeader title="Nueva reserva" description="Cargá los datos de la reserva" />
+    <div className="max-w-4xl">
+      <PageHeader
+        title="Nueva reserva"
+        description="Completá los datos para crear la reserva."
+      />
       <ReservationForm
         properties={properties}
         guests={guests}
