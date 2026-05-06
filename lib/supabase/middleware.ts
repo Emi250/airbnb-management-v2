@@ -40,7 +40,8 @@ export async function updateSession(request: NextRequest) {
     const isPublic =
       pathname === "/" ||
       pathname.startsWith("/_next") ||
-      pathname.startsWith("/api/health");
+      pathname.startsWith("/api/health") ||
+      pathname.startsWith("/api/cron/");
 
     // Not logged in: redirect everything except auth/public pages to /login
     if (!user && !isAuthPage && !isPublic) {

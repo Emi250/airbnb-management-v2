@@ -73,6 +73,7 @@ type ReservationRow = {
   status: ReservationStatus;
   notes: string | null;
   nights: number;
+  checkin_reminder_sent_at: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -90,6 +91,7 @@ type ReservationInsert = {
   cleaning_fee_ars?: number | null;
   status?: ReservationStatus;
   notes?: string | null;
+  checkin_reminder_sent_at?: string | null;
   created_at?: string;
   updated_at?: string;
 };
