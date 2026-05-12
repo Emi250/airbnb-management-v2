@@ -399,7 +399,9 @@ function DesktopTable({
                   <span className="numeric">{r.num_guests}</span>
                 </Cell>
                 <Cell href={hrefFor(r.id)} align="right">
-                  <span className="numeric">{formatCurrency(r.total_amount_ars)}</span>
+                  <span className="numeric">
+                    {formatCurrency(r.total_amount_ars - r.amount_paid_ars)}
+                  </span>
                 </Cell>
                 <td className="px-4 py-2.5">
                   <PhoneCell phone={r.guest?.phone ?? null} />
@@ -510,7 +512,7 @@ function MobileCards({
                   </span>
                 )}
                 <span className="numeric ml-auto truncate text-sm font-semibold">
-                  {formatCurrency(r.total_amount_ars)}
+                  {formatCurrency(r.total_amount_ars - r.amount_paid_ars)}
                 </span>
               </div>
               <p className="mt-3 truncate text-base font-semibold">
