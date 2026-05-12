@@ -71,7 +71,7 @@ function buildTelegramMessage(opts: {
     `👤 <b>Huésped:</b> ${safeName}`,
     `🌙 <b>Noches:</b> ${opts.nights}`,
     `👥 <b>Pax:</b> ${opts.numGuests}`,
-    `💰 <b>TOTAL A PAGAR:</b> ${totalDisplay}`,
+    `💰 <b>MONTO A PAGAR:</b> ${totalDisplay}`,
     `📱 <b>Teléfono:</b> ${phoneDisplay}`,
   ];
 
@@ -103,7 +103,7 @@ export async function runCheckinReminders(): Promise<ReminderResult> {
   const { data, error } = await supabase
     .from("reservations")
     .select(
-      "id, check_in, num_guests, nights, total_amount_ars, guests:guest_id(name, phone)"
+      "id, check_in, num_guests, nights, total_amount_ars, amount_paid_ars, guests:guest_id(name, phone)"
     )
     .eq("status", "confirmed")
     .eq("check_in", targetDate)
@@ -123,9 +123,11 @@ export async function runCheckinReminders(): Promise<ReminderResult> {
     const rawPhone = guest?.phone ?? null;
     const normalized = normalizeArPhone(rawPhone);
 
+    const balanceArs = Number(row.total_amount_ars) - Number(row.amount_paid_ars);
+
     let waLink: string | null = null;
     if (normalized) {
-      const waText = buildWhatsAppText(guestName, Number(row.total_amount_ars));
+      const waText = buildWhatsAppText(guestName, balanceArs);
       waLink = buildWhatsAppLink(normalized, waText);
     } else {
       result.skipped_no_phone += 1;
@@ -135,7 +137,7 @@ export async function runCheckinReminders(): Promise<ReminderResult> {
       guestName,
       nights: row.nights,
       numGuests: row.num_guests,
-      totalAmountArs: Number(row.total_amount_ars),
+      totalAmountArs: balanceArs,
       rawPhone,
       waLink,
     });
