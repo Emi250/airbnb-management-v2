@@ -17,3 +17,4 @@ coverage/
 
 # Supabase CLI cache (auto-created by `npx supabase ...`)
 supabase/.temp/
+.superpowers/
