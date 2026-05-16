@@ -1,3 +1,4 @@
+import { BrandLogo } from "@/components/brand-logo";
 import { LoginForm } from "./login-form";
 
 export default function LoginPage({
@@ -8,13 +9,13 @@ export default function LoginPage({
   return (
     <main className="min-h-screen flex items-center justify-center bg-background px-6">
       <div className="w-full max-w-md">
-        <div className="mb-10 text-center">
-          <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-accent text-accent-foreground font-mono text-lg font-bold">
-            AB
-          </div>
-          <h1 className="mt-6 text-3xl font-semibold tracking-tight">Gestión Airbnb</h1>
+        <div className="mb-10 flex flex-col items-center text-center">
+          <BrandLogo size="lg" />
+          <h1 className="mt-6 text-3xl font-semibold tracking-tight">
+            Refugio del Corazón
+          </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Capilla del Monte · Plataforma interna
+            Capilla del Monte · Gestión de reservas
           </p>
         </div>
         <LoginFormBoundary searchParams={searchParams} />
