@@ -34,13 +34,15 @@ export function SortableHeader({
   const Icon = !active ? ChevronsUpDown : direction === "asc" ? ArrowUp : ArrowDown;
 
   return (
-    <TableHead className={cn(align === "right" && "text-right", className)}>
-      {/* eslint-disable-next-line jsx-a11y/role-supports-aria-props */}
+    <TableHead
+      // aria-sort va en la celda de cabecera (rol columnheader), no en el botón.
+      aria-sort={active ? (direction === "asc" ? "ascending" : "descending") : "none"}
+      className={cn(align === "right" && "text-right", className)}
+    >
       <button
         type="button"
         onClick={onSort}
         aria-label={`Ordenar por ${label}`}
-        aria-sort={active ? (direction === "asc" ? "ascending" : "descending") : "none"}
         className={cn(
           "inline-flex items-center gap-1 text-xs font-medium uppercase tracking-wide transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm",
           active ? "text-foreground" : "text-muted-foreground",
