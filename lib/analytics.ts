@@ -1,4 +1,4 @@
-import { differenceInDays, parseISO, startOfMonth, endOfMonth, format } from "date-fns";
+import { differenceInDays, parseISO, startOfMonth, endOfMonth, startOfDay, format } from "date-fns";
 import { es } from "date-fns/locale";
 
 type Reservation = {
@@ -39,11 +39,19 @@ export function sumExpenses(expenses: Expense[], from: Date, to: Date): number {
     .reduce((acc, e) => acc + Number(e.amount_ars), 0);
 }
 
-/** Outstanding balance across active reservations. */
+/**
+ * Outstanding balance across active reservations. Confirmed/completed
+ * reservations whose check-in already passed are treated as fully paid,
+ * since the guest settles the remaining balance on arrival.
+ */
 export function outstandingBalance(reservations: Reservation[]): number {
-  return reservations
-    .filter(ACTIVE)
-    .reduce((acc, r) => acc + (Number(r.total_amount_ars) - Number(r.amount_paid_ars)), 0);
+  const todayStart = startOfDay(new Date());
+  return reservations.filter(ACTIVE).reduce((acc, r) => {
+    const checkInPassed = parseISO(r.check_in) < todayStart;
+    const settled = r.status === "confirmed" || r.status === "completed";
+    if (checkInPassed && settled) return acc;
+    return acc + (Number(r.total_amount_ars) - Number(r.amount_paid_ars));
+  }, 0);
 }
 
 /** Occupancy rate for a date range across the listed properties: occupied nights / available nights. */
