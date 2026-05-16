@@ -24,7 +24,7 @@ export default async function CalendarPage() {
 
   return (
     <div>
-      <PageHeader title="Calendario" description="Vista cronológica multi-propiedad" />
+      <PageHeader title="Calendario" description="Llegadas de huéspedes por día" />
       <CalendarView
         properties={properties}
         reservations={reservations}
