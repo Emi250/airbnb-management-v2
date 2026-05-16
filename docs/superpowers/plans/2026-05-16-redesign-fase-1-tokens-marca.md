@@ -21,7 +21,7 @@
 | `app/globals.css` | Modificar | Tokens OKLCH de color (`:root`, `.dark`) y variables de fuente en `@theme inline`. |
 | `app/layout.tsx` | Modificar | Cargar Geist como sans, mantener JetBrains Mono, metadata del sitio, tema por defecto. |
 | `components/brand-logo.tsx` | Crear | Componente compartido que renderiza el logo circular en 3 tamaños. |
-| `public/logo-refugio.png` | Agregar (manual) | Imagen del logo provista por el usuario. |
+| `public/logo-refugio.jpeg` | Agregar (manual) | Imagen del logo provista por el usuario. |
 | `components/sidebar.tsx` | Modificar | Encabezado de marca: logo circular + "Refugio del Corazón". |
 | `components/mobile-header.tsx` | Modificar | Marca en el header móvil. |
 | `app/(auth)/login/page.tsx` | Modificar | Logo grande + marca en la pantalla de login. |
@@ -245,21 +245,21 @@ git commit -m "feat(theme): tipografía Geist y metadata Refugio del Corazón"
 ## Task 3: Agregar el archivo del logo
 
 **Files:**
-- Add: `public/logo-refugio.png` (acción manual del usuario)
+- Add: `public/logo-refugio.jpeg` (acción manual del usuario)
 
 - [ ] **Step 1: Guardar la imagen del logo**
 
-Acción manual: guardar la imagen del logo provista por el usuario (montaña + casa + figura de madre, fondo crema) en `public/logo-refugio.png`. Si la carpeta `public/` no existe, crearla. El archivo debe ser un PNG o JPG cuadrado.
+Acción manual: guardar la imagen del logo provista por el usuario (montaña + casa + figura de madre, fondo crema) en `public/logo-refugio.jpeg`. Si la carpeta `public/` no existe, crearla. El archivo debe ser un PNG o JPG cuadrado.
 
 - [ ] **Step 2: Verificar que el archivo existe**
 
-Run: `ls public/logo-refugio.png`
+Run: `ls public/logo-refugio.jpeg`
 Expected: el comando lista el archivo sin error. Si falla, el usuario todavía no lo guardó — detenerse y pedírselo.
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add public/logo-refugio.png
+git add public/logo-refugio.jpeg
 git commit -m "chore: agregar logo Refugio del Corazón"
 ```
 
@@ -288,7 +288,7 @@ export function BrandLogo({
   const px = SIZES[size];
   return (
     <Image
-      src="/logo-refugio.png"
+      src="/logo-refugio.jpeg"
       alt="Refugio del Corazón"
       width={px}
       height={px}
