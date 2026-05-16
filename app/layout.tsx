@@ -21,10 +21,8 @@ const themeScript = `(function(){try{var t=localStorage.getItem('theme');if(t===
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es-AR" suppressHydrationWarning>
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-      </head>
       <body className={`${GeistSans.variable} ${jetbrains.variable} antialiased`}>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <ThemeProvider defaultTheme="light">
           <ReactQueryProvider>
             {children}
