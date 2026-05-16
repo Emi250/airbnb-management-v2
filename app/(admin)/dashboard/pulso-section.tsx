@@ -98,8 +98,12 @@ export function PulsoSection({
     <section className="space-y-5">
       <SectionHeading title="Pulso del mes" />
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Jerarquía: 1 KPI hero grande arriba (ancho completo) + 3 KPIs de
+          apoyo chicos en una fila debajo. En mobile los 3 de apoyo se apilan
+          en una columna; desde sm en una fila de 3. */}
+      <div className="space-y-3">
         <HeroKpi
+          size="lg"
           label="Ingresos del mes"
           value={empty ? null : fmtMoney(kpis.revenue.value, currency, rate)}
           status={empty ? null : kpis.revenue.compare?.status ?? "no_target"}
@@ -108,28 +112,34 @@ export function PulsoSection({
           momDirection={revenueMom.direction}
           editTarget={renderEditTrigger()}
         />
-        <HeroKpi
-          label="Beneficio neto"
-          value={empty ? null : fmtMoney(kpis.netProfit.value, currency, rate)}
-          status={null}
-          momDelta={empty ? null : profitMom.text}
-          momDirection={profitMom.direction}
-        />
-        <HeroKpi
-          label="Ocupación promedio"
-          value={empty ? null : formatPercent(kpis.occupancy.value)}
-          status={empty ? null : kpis.occupancy.compare?.status ?? "no_target"}
-          vsTarget={empty ? null : fmtVsTarget(kpis.occupancy.compare)}
-          momDelta={empty ? null : occMom.text}
-          momDirection={occMom.direction}
-          editTarget={renderEditTrigger()}
-        />
-        <HeroKpi
-          label="Saldo pendiente"
-          value={empty ? null : fmtMoney(kpis.balance.value, currency, rate)}
-          status={null}
-          momDelta={null}
-        />
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <HeroKpi
+            size="sm"
+            label="Beneficio neto"
+            value={empty ? null : fmtMoney(kpis.netProfit.value, currency, rate)}
+            status={null}
+            momDelta={empty ? null : profitMom.text}
+            momDirection={profitMom.direction}
+          />
+          <HeroKpi
+            size="sm"
+            label="Ocupación promedio"
+            value={empty ? null : formatPercent(kpis.occupancy.value)}
+            status={empty ? null : kpis.occupancy.compare?.status ?? "no_target"}
+            vsTarget={empty ? null : fmtVsTarget(kpis.occupancy.compare)}
+            momDelta={empty ? null : occMom.text}
+            momDirection={occMom.direction}
+            editTarget={renderEditTrigger()}
+          />
+          <HeroKpi
+            size="sm"
+            label="Saldo pendiente"
+            value={empty ? null : fmtMoney(kpis.balance.value, currency, rate)}
+            status={null}
+            momDelta={null}
+          />
+        </div>
       </div>
 
       <Card>
