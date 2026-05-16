@@ -4,10 +4,10 @@
 
 -- Properties
 insert into properties (id, name, address, base_price_ars, cleaning_fee_ars, color_hex, active) values
-  ('11111111-1111-1111-1111-111111111111', 'Airbnb 1', 'Av. Pueyrredón 100, Capilla del Monte, Córdoba', 35000, 8000, '#A47148', true),
-  ('22222222-2222-2222-2222-222222222222', 'Airbnb 2', 'Diagonal Sarmiento 250, Capilla del Monte, Córdoba', 42000, 8000, '#5B8FB9', true),
-  ('33333333-3333-3333-3333-333333333333', 'Airbnb 3', 'Calle Pública s/n, Barrio La Toma, Capilla del Monte, Córdoba', 38000, 9000, '#3F6B3F', true),
-  ('44444444-4444-4444-4444-444444444444', 'Airbnb 4', 'Ruta 38 km 7, Capilla del Monte, Córdoba', 50000, 10000, '#B45253', true);
+  ('11111111-1111-1111-1111-111111111111', 'Airbnb 1', 'Av. Pueyrredón 100, Capilla del Monte, Córdoba', 35000, 8000, '#c06d4a', true),
+  ('22222222-2222-2222-2222-222222222222', 'Airbnb 2', 'Diagonal Sarmiento 250, Capilla del Monte, Córdoba', 42000, 8000, '#3f6ea5', true),
+  ('33333333-3333-3333-3333-333333333333', 'Airbnb 3', 'Calle Pública s/n, Barrio La Toma, Capilla del Monte, Córdoba', 38000, 9000, '#5a8f4e', true),
+  ('44444444-4444-4444-4444-444444444444', 'Airbnb 4', 'Ruta 38 km 7, Capilla del Monte, Córdoba', 50000, 10000, '#9c5f86', true);
 
 -- Exchange rates (placeholder — ARS/USD ~1000, ARS/EUR ~1100)
 insert into exchange_rates (ars_per_usd, ars_per_eur) values (1000, 1100);

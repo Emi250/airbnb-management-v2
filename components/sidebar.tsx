@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { BrandLogo } from "@/components/brand-logo";
 import { signOutAction } from "@/app/(auth)/login/actions";
 import { useTheme } from "@/components/theme-provider";
 import type { UserRole } from "@/types/supabase";
@@ -66,11 +67,9 @@ export function Sidebar({
       >
         <div className="flex items-center justify-between border-b border-border px-5 py-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent text-accent-foreground font-mono text-sm font-bold">
-              AB
-            </div>
+            <BrandLogo size="md" />
             <div>
-              <p className="text-sm font-semibold leading-tight">Gestión Airbnb</p>
+              <p className="text-sm font-semibold leading-tight">Refugio del Corazón</p>
               <p className="text-xs text-muted-foreground">Capilla del Monte</p>
             </div>
           </div>

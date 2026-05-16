@@ -1,4 +1,4 @@
-# Gestión Airbnb · Capilla del Monte
+# Refugio del Corazón · Capilla del Monte
 
 Plataforma interna de gestión para 4 propiedades Airbnb en Capilla del Monte (Córdoba, Argentina). Reemplaza la base de datos `RESERVAS` de Notion con un dashboard financiero completo, calendario multi-propiedad, CRUD de reservas y una vista de agenda simplificada para la encargada.
 
@@ -145,9 +145,9 @@ pnpm typecheck   # solo tsc
 
 ## Decisiones de diseño
 
-- **Tema**: dark por defecto (matchea el aspecto de Notion del owner). Toggle disponible en sidebar.
-- **Color de marca**: warm tan `#A47148` (pastel del tag "Airbnb 1").
-- **Tipografía**: Inter para UI, JetBrains Mono para columnas numéricas (alineación tabular en tablas).
+- **Tema**: claro por defecto (modo primario del rediseño). Toggle claro/oscuro disponible en sidebar.
+- **Color de marca**: teal profundo `oklch(0.52 0.085 192)` sobre base neutra cálida.
+- **Tipografía**: Geist para UI, JetBrains Mono para columnas numéricas (alineación tabular en tablas).
 - **Locale**: `es-AR`. Fechas largas: `27 de abril de 2026`. Moneda: `$ 312.300,00 ARS` vía `formatCurrency()`.
 - **Triple defensa de roles**: RLS + middleware + layout server-side. La encargada nunca ve montos ni saldos.
 - **Conflictos de fechas**: doble validación (zod + trigger DB que rechaza overlap activo).
