@@ -263,11 +263,30 @@ export function DashboardClient({
     [filteredRes, filteredProps]
   );
 
-  // YTD revenue donut data.
-  const ytdByProperty = useMemo(
-    () => revenueByPropertyYTD(filteredRes, filteredProps),
-    [filteredRes, filteredProps]
-  );
+  // Datos por departamento para la lista de "Análisis por departamento":
+  // ingresos YTD (de revenueByPropertyYTD) + ocupación YTD (occupancyRate por
+  // propiedad sobre la misma ventana inicio-de-año → hoy). Composición de
+  // funciones ya existentes; no se agrega lógica a lib/analytics.ts.
+  const departmentBreakdown = useMemo(() => {
+    const ytdFrom = startOfYear(new Date());
+    const ytdTo = endOfDay(new Date());
+    const revenueRows = revenueByPropertyYTD(filteredRes, filteredProps);
+    return filteredProps.map((p) => {
+      const revRow = revenueRows.find((r) => r.name === p.name);
+      return {
+        id: p.id,
+        name: p.name,
+        color: p.color_hex ?? "#A47148",
+        revenueYtd: revRow?.value ?? 0,
+        occupancy: occupancyRate(
+          filteredRes.filter((r) => r.property_id === p.id),
+          [p],
+          ytdFrom,
+          ytdTo
+        ),
+      };
+    });
+  }, [filteredRes, filteredProps]);
 
   return (
     <div className="space-y-8 pb-12">
@@ -328,9 +347,7 @@ export function DashboardClient({
           data: monthlyOcc,
           properties: filteredProps,
         }}
-        donut={{
-          data: ytdByProperty,
-        }}
+        breakdown={departmentBreakdown}
         currency={filters.currency}
         rate={rate}
       />

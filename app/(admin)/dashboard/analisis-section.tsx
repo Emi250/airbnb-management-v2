@@ -3,7 +3,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SectionHeading } from "@/components/dashboard/section-heading";
 import { OccupancyBarChart } from "@/components/charts/occupancy-bar";
-import { RevenueDonut } from "@/components/charts/revenue-donut";
+import {
+  DepartmentBreakdownList,
+  type DepartmentBreakdownRow,
+} from "@/components/dashboard/department-breakdown-list";
 import { type Currency } from "@/lib/format";
 import type { ExchangeRate, Property } from "@/types/supabase";
 
@@ -12,17 +15,21 @@ export type AnalisisSectionProps = {
     data: Array<Record<string, string | number>>;
     properties: Property[];
   };
-  donut: {
-    data: { name: string; value: number; color: string }[];
-  };
+  /** Una fila por departamento: ingresos YTD + ocupación YTD. */
+  breakdown: DepartmentBreakdownRow[];
   currency: Currency;
   rate: ExchangeRate;
 };
 
-export function AnalisisSection({ occupancy, donut, currency, rate }: AnalisisSectionProps) {
+export function AnalisisSection({
+  occupancy,
+  breakdown,
+  currency,
+  rate,
+}: AnalisisSectionProps) {
   return (
     <section className="space-y-4">
-      <SectionHeading title="Análisis por propiedad" />
+      <SectionHeading title="Análisis por departamento" />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
@@ -42,11 +49,15 @@ export function AnalisisSection({ occupancy, donut, currency, rate }: AnalisisSe
         <Card>
           <CardHeader>
             <CardTitle className="text-base font-medium">
-              Ingresos por propiedad (YTD)
+              Ingresos por departamento (YTD)
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <RevenueDonut data={donut.data} currency={currency} rate={rate} />
+            <DepartmentBreakdownList
+              rows={breakdown}
+              currency={currency}
+              rate={rate}
+            />
           </CardContent>
         </Card>
       </div>
