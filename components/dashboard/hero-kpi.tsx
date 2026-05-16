@@ -7,6 +7,8 @@ import { OnTrackBadge } from "./on-track-badge";
 import type { TargetStatus } from "@/lib/analytics-targets";
 import { cn } from "@/lib/utils";
 
+export type HeroKpiSize = "lg" | "sm";
+
 export type HeroKpiProps = {
   /** Spanish label, e.g. "Ingresos del mes". */
   label: string;
@@ -20,6 +22,11 @@ export type HeroKpiProps = {
   momDelta?: string | null;
   /** Sign of the MoM delta — drives color. "positive" | "negative" | "neutral". */
   momDirection?: "positive" | "negative" | "neutral";
+  /**
+   * Visual weight. "lg" is the dashboard hero (big number, generous padding).
+   * "sm" is a demoted supporting KPI (smaller number, lighter card). Default "lg".
+   */
+  size?: HeroKpiSize;
   /** When true, all values render as Skeletons. */
   loading?: boolean;
   /** Slot for the inline "Editar objetivo" trigger. Pass a button (typically the trigger of KpiTargetPopover). */
@@ -33,27 +40,53 @@ export function HeroKpi({
   vsTarget,
   momDelta,
   momDirection = "neutral",
+  size = "lg",
   loading,
   editTarget,
 }: HeroKpiProps) {
   const isEmpty = value === null && !loading;
+  const isLg = size === "lg";
 
   return (
-    <Card className="h-full">
-      <CardContent className="p-5 md:p-6 flex flex-col gap-3 min-w-0">
+    <Card className={cn("h-full", !isLg && "bg-secondary/40 shadow-none")}>
+      <CardContent
+        className={cn(
+          "flex flex-col min-w-0",
+          isLg ? "p-5 md:p-6 gap-3" : "p-4 gap-2"
+        )}
+      >
         {/* Label */}
-        <p className="text-sm font-medium text-muted-foreground">{label}</p>
+        <p
+          className={cn(
+            "font-medium text-muted-foreground",
+            isLg ? "text-sm" : "text-xs"
+          )}
+        >
+          {label}
+        </p>
 
         {/* Big number */}
         <div className="min-w-0">
           {loading ? (
-            <Skeleton className="h-9 w-32 lg:h-10 lg:w-40" />
+            <Skeleton
+              className={cn(isLg ? "h-10 w-44 lg:h-12 lg:w-52" : "h-7 w-28")}
+            />
           ) : isEmpty ? (
-            <p className="text-3xl lg:text-4xl font-semibold tracking-tight tabular-nums text-muted-foreground">
+            <p
+              className={cn(
+                "font-semibold tracking-tight tabular-nums text-muted-foreground",
+                isLg ? "text-4xl lg:text-5xl" : "text-xl lg:text-2xl"
+              )}
+            >
               —
             </p>
           ) : (
-            <p className="text-3xl lg:text-4xl font-semibold tracking-tight tabular-nums truncate">
+            <p
+              className={cn(
+                "font-semibold tracking-tight tabular-nums truncate",
+                isLg ? "text-4xl lg:text-5xl" : "text-xl lg:text-2xl"
+              )}
+            >
               {value}
             </p>
           )}
@@ -100,7 +133,7 @@ export function HeroKpi({
 
 /**
  * Default trigger for the inline target popover. Compose into HeroKpi via the
- * `editTarget` slot. The popover wires itself in Task 8.
+ * `editTarget` slot.
  */
 export function EditTargetTrigger({
   onClick,
