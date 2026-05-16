@@ -2,6 +2,7 @@
 
 import { Menu, Sun, Moon } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
+import { BrandLogo } from "@/components/brand-logo";
 
 export function MobileHeader({ onMenuClick }: { onMenuClick: () => void }) {
   const { theme, toggle } = useTheme();
@@ -17,10 +18,8 @@ export function MobileHeader({ onMenuClick }: { onMenuClick: () => void }) {
         <Menu className="h-5 w-5" />
       </button>
       <div className="flex items-center gap-2">
-        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-accent-foreground font-mono text-xs font-bold">
-          AB
-        </div>
-        <span className="text-sm font-semibold">Gestión Airbnb</span>
+        <BrandLogo size="sm" />
+        <span className="text-sm font-semibold">Refugio del Corazón</span>
       </div>
       <button
         type="button"
