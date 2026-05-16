@@ -13,9 +13,17 @@ export const metadata: Metadata = {
   description: "Gestión de reservas — Refugio del Corazón, Capilla del Monte",
 };
 
+// Aplica el tema antes del primer paint para evitar el parpadeo de fondo claro
+// cuando el usuario tiene el modo oscuro guardado. Default "light" (igual que
+// ThemeProvider) cuando no hay valor en localStorage.
+const themeScript = `(function(){try{var t=localStorage.getItem('theme');if(t==='dark'){document.documentElement.classList.add('dark');}else if(t==='light'){document.documentElement.classList.remove('dark');}}catch(e){}})();`;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es-AR" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body className={`${GeistSans.variable} ${jetbrains.variable} antialiased`}>
         <ThemeProvider defaultTheme="light">
           <ReactQueryProvider>
