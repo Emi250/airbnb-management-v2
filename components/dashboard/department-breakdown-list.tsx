@@ -39,28 +39,37 @@ export function DepartmentBreakdownList({
   }
 
   return (
-    <ul className="divide-y divide-border">
-      {rows.map((row) => (
-        <li
-          key={row.id}
-          className="flex items-center gap-3 py-3 first:pt-0 last:pb-0"
-        >
-          <span
-            className="h-2.5 w-2.5 shrink-0 rounded-full"
-            style={{ backgroundColor: row.color }}
-            aria-hidden
-          />
-          <span className="min-w-0 flex-1 truncate text-sm font-medium">
-            {row.name}
-          </span>
-          <span className="shrink-0 text-sm tabular-nums text-muted-foreground">
-            {formatPercent(row.occupancy)}
-          </span>
-          <span className="w-32 shrink-0 text-right text-sm font-medium tabular-nums">
-            {formatCurrency(row.revenueYtd, currency, rate, 0)}
-          </span>
-        </li>
-      ))}
-    </ul>
+    <div>
+      {/* Encabezado de columnas — evita que el % se lea como otra cosa. */}
+      <div className="flex items-center gap-3 pb-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+        <span className="h-2.5 w-2.5 shrink-0" aria-hidden />
+        <span className="min-w-0 flex-1">Departamento</span>
+        <span className="shrink-0">Ocupación</span>
+        <span className="w-32 shrink-0 text-right">Ingresos YTD</span>
+      </div>
+      <ul className="divide-y divide-border border-t border-border">
+        {rows.map((row) => (
+          <li
+            key={row.id}
+            className="flex items-center gap-3 py-3"
+          >
+            <span
+              className="h-2.5 w-2.5 shrink-0 rounded-full"
+              style={{ backgroundColor: row.color }}
+              aria-hidden
+            />
+            <span className="min-w-0 flex-1 truncate text-sm font-medium">
+              {row.name}
+            </span>
+            <span className="shrink-0 text-sm tabular-nums text-muted-foreground">
+              {formatPercent(row.occupancy)}
+            </span>
+            <span className="w-32 shrink-0 text-right text-sm font-medium tabular-nums">
+              {formatCurrency(row.revenueYtd, currency, rate, 0)}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
