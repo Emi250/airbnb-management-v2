@@ -32,7 +32,7 @@ export default async function AgendaPage() {
   const ownerTel = telLink(ownerPhone) ?? "tel:+5491100000000";
 
   return (
-    <main className="min-h-screen bg-background px-4 py-6 md:px-10 md:py-10">
+    <main className="min-h-[100dvh] bg-background px-4 py-6 md:px-10 md:py-10">
       <header className="mx-auto max-w-3xl mb-8 flex items-start justify-between gap-4">
         <div>
           <p className="text-base text-muted-foreground capitalize">
@@ -194,7 +194,7 @@ function BigCard({ row, kind }: { row: Row; kind: "checkin" | "checkout" }) {
             href={wa}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-5 py-3 text-base font-semibold text-white"
+            className="inline-flex items-center gap-2 rounded-xl bg-success px-5 py-3 text-base font-semibold text-success-foreground"
           >
             <MessageCircle className="h-5 w-5" />
             WhatsApp
