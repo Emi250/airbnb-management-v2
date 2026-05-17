@@ -31,7 +31,9 @@ haya "must fix" visuales requiere las capturas pendientes.
 
 ## Should Fix
 
-1. **Verde crudo `emerald-500` en lugar del token `--success`.** El sistema nuevo define
+> **Estado: resueltos** (commit `dbe92ea`). Ambos ítems fueron corregidos y pusheados.
+
+1. **Verde crudo `emerald-500` en lugar del token `--success`.** ✓ Resuelto El sistema nuevo define
    un token `--success` (verde) para claro y oscuro, y el calendario ya lo usa
    (`bg-success`). Pero quedaron usos del verde fijo de Tailwind que no cambian con el modo
    oscuro ni comparten el tono del sistema:
@@ -46,12 +48,8 @@ haya "must fix" visuales requiere las capturas pendientes.
    text-success-foreground`, `text-success`. Es un cambio chico y unifica la paleta en
    claro y oscuro._
 
-2. **`min-h-screen` en pantallas auxiliares.** La página de Agenda se corrigió a
-   `min-h-[100dvh]` (Fase 4D), pero quedaron con `min-h-screen`:
-   `app/(caretaker)/agenda/loading.tsx:5`, `app/(auth)/login/page.tsx:10`,
-   `app/error.tsx:18`, `app/not-found.tsx:6`, `components/admin-shell.tsx:20`.
-   En navegadores móviles `100vh` provoca un pequeño salto de layout por la barra de
-   direcciones. _Fix: cambiar `min-h-screen` por `min-h-[100dvh]` en esos 5 archivos._
+2. **`min-h-screen` en pantallas auxiliares.** ✓ Resuelto — `min-h-[100dvh]` aplicado en
+   `agenda/loading.tsx`, `login/page.tsx`, `error.tsx`, `not-found.tsx` y `admin-shell.tsx`.
 
 ## Could Improve
 
