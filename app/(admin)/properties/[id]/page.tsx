@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { PageHeader } from "@/components/page-header";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -66,15 +65,28 @@ export default async function PropertyDetailPage({
 
   return (
     <div>
-      <PageHeader
-        title={property.name}
-        description={property.address ?? "Sin dirección"}
-        actions={
+      <div className="mb-6 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
+        <div className="flex items-center gap-3">
+          <span
+            className="h-10 w-10 shrink-0 rounded-lg"
+            style={{ backgroundColor: property.color_hex ?? "#A47148" }}
+            aria-hidden
+          />
+          <div>
+            <h1 className="text-3xl font-semibold tracking-tight">{property.name}</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {property.address ?? "Sin dirección"}
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
           <Button asChild variant="outline">
-            <Link href={`/reservations/new?property=${property.id}`}>+ Nueva reserva</Link>
+            <Link href={`/reservations/new?property=${property.id}`}>
+              + Nueva reserva
+            </Link>
           </Button>
-        }
-      />
+        </div>
+      </div>
 
       <div className="mb-6 grid gap-3 sm:grid-cols-4">
         <Stat label="Ingresos mes" value={formatCurrency(monthRevenue)} />
