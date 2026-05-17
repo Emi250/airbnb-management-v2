@@ -1,12 +1,14 @@
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Plus, ListChecks } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
 import { listReservations, listProperties } from "@/lib/queries/reservations";
-import { ReservationsTable } from "./reservations-table";
+import {
+  ReservationsTable,
+  ExportReservationsButton,
+} from "./reservations-table";
 import { ReservationsFilters } from "./reservations-filters";
 import { EmptyState } from "@/components/empty-state";
-import { ListChecks } from "lucide-react";
 
 export default async function ReservationsPage({
   searchParams,
@@ -43,12 +45,15 @@ export default async function ReservationsPage({
         title="Reservas"
         description={`${rows.length} reservas con los filtros aplicados`}
         actions={
-          <Button asChild>
-            <Link href="/reservations/new">
-              <Plus className="h-4 w-4" />
-              Nueva reserva
-            </Link>
-          </Button>
+          <>
+            <ExportReservationsButton rows={rows} />
+            <Button asChild>
+              <Link href="/reservations/new">
+                <Plus className="h-4 w-4" />
+                Nueva reserva
+              </Link>
+            </Button>
+          </>
         }
       />
 
