@@ -18,15 +18,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { formatCurrency, formatDateShort } from "@/lib/format";
+import { formatCurrency } from "@/lib/format";
 import { SOURCE_LABEL, STATUS_LABEL } from "@/lib/reservation-options";
 import type {
   Property,
@@ -135,6 +127,15 @@ export function ReportsClient({
       availableNights,
     };
   }, [filteredReservations, filteredProperties.length, filters.from, filters.to]);
+
+  // Reservas con saldo a cobrar — mismo predicado que usa exportPending.
+  const pendingCount = useMemo(
+    () =>
+      filteredReservations.filter(
+        (r) => Number(r.total_amount_ars) - Number(r.amount_paid_ars) > 0
+      ).length,
+    [filteredReservations]
+  );
 
   const rangeSlug = `${filters.from}_${filters.to}`;
 
@@ -369,7 +370,8 @@ export function ReportsClient({
     downloadCsv(`reporte-fiscal-${rangeSlug}.csv`, [], rows);
   }
 
-  const reportCards: ReportCardSpec[] = [
+  // Tarjetas de exportación agrupadas por uso.
+  const operativos: ReportCardSpec[] = [
     {
       key: "guests",
       icon: Users,
@@ -388,6 +390,24 @@ export function ReportsClient({
       action: exportReservations,
     },
     {
+      key: "pending",
+      icon: AlertCircle,
+      title: "Saldos pendientes",
+      description: "Reservas con saldo a cobrar — ordenadas por check-out.",
+      action: exportPending,
+      tone: "warning",
+    },
+    {
+      key: "occupancy",
+      icon: Wallet,
+      title: "Ocupación y ADR",
+      description: "Noches ocupadas, % ocupación y tarifa promedio diaria.",
+      action: exportOccupancy,
+    },
+  ];
+
+  const contables: ReportCardSpec[] = [
+    {
       key: "consolidated",
       icon: BarChart3,
       title: "Ingresos por propiedad",
@@ -400,21 +420,6 @@ export function ReportsClient({
       title: "Ingresos por canal",
       description: "Reservas y revenue por canal (Airbnb, Booking, Directo, Otro).",
       action: exportBySource,
-    },
-    {
-      key: "occupancy",
-      icon: Wallet,
-      title: "Ocupación y ADR",
-      description: "Noches ocupadas, % ocupación y tarifa promedio diaria.",
-      action: exportOccupancy,
-    },
-    {
-      key: "pending",
-      icon: AlertCircle,
-      title: "Saldos pendientes",
-      description: "Reservas con saldo a cobrar — ordenadas por check-out.",
-      action: exportPending,
-      tone: "warning",
     },
     {
       key: "fiscal",
@@ -434,6 +439,39 @@ export function ReportsClient({
         onChange={setFilters}
       />
 
+      {/* Pagos pendientes — al frente, sólo si hay saldo a cobrar. */}
+      {summary.pending > 0 ? (
+        <Card className="border-2 border-warning/40">
+          <CardContent className="flex flex-wrap items-center justify-between gap-4 p-6">
+            <div className="flex items-center gap-3">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-warning/10 text-warning">
+                <AlertCircle className="h-6 w-6" />
+              </span>
+              <div>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Pagos pendientes
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {pendingCount}{" "}
+                  {pendingCount === 1
+                    ? "reserva con saldo a cobrar"
+                    : "reservas con saldo a cobrar"}
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-4">
+              <p className="numeric text-3xl font-semibold sm:text-4xl">
+                {formatCurrency(summary.pending)}
+              </p>
+              <Button type="button" variant="outline" onClick={exportPending}>
+                <Download className="h-4 w-4" />
+                Descargar saldos
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
+
       <ReportsKpis summary={summary} />
 
       <Card>
@@ -450,31 +488,29 @@ export function ReportsClient({
         </CardContent>
       </Card>
 
-      <div>
-        <h2 className="mb-3 text-sm font-medium uppercase tracking-wider text-muted-foreground">
-          Descargas
-        </h2>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {reportCards.map((card) => (
-            <ReportCard key={card.key} spec={card} />
-          ))}
+      <div className="space-y-6">
+        <div>
+          <h2 className="mb-3 text-sm font-medium uppercase tracking-wider text-muted-foreground">
+            Reportes operativos
+          </h2>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {operativos.map((card) => (
+              <ReportCard key={card.key} spec={card} />
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <h2 className="mb-3 text-sm font-medium uppercase tracking-wider text-muted-foreground">
+            Reportes contables
+          </h2>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {contables.map((card) => (
+              <ReportCard key={card.key} spec={card} />
+            ))}
+          </div>
         </div>
       </div>
-
-      <Card>
-        <CardHeader className="flex-row items-center justify-between gap-2 space-y-0 pb-3">
-          <CardTitle className="text-base font-medium">
-            Vista previa · reservas del período
-          </CardTitle>
-          <span className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">
-            {filteredReservations.length}{" "}
-            {filteredReservations.length === 1 ? "reserva" : "reservas"}
-          </span>
-        </CardHeader>
-        <CardContent>
-          <PreviewTable rows={filteredReservations} totalRevenue={summary.totalRevenue} />
-        </CardContent>
-      </Card>
     </div>
   );
 }
@@ -533,97 +569,3 @@ function ReportCard({ spec }: { spec: ReportCardSpec }) {
     </Card>
   );
 }
-
-function PreviewTable({
-  rows,
-  totalRevenue,
-}: {
-  rows: ReservationRow[];
-  totalRevenue: number;
-}) {
-  if (rows.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
-        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-muted-foreground">
-          <Receipt className="h-5 w-5" />
-        </span>
-        <p className="text-sm font-medium">Sin reservas en este período</p>
-        <p className="text-xs text-muted-foreground">
-          Ajustá el rango o quitá filtros para ver resultados.
-        </p>
-      </div>
-    );
-  }
-  const sorted = rows.slice().sort((a, b) => a.check_in.localeCompare(b.check_in));
-  const totalPaid = rows.reduce((a, r) => a + Number(r.amount_paid_ars), 0);
-  const totalNights = rows.reduce(
-    (a, r) => a + Number(r.nights ?? 0),
-    0
-  );
-  const occupancyMissing = totalNights === 0;
-  return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Check-in</TableHead>
-          <TableHead>Check-out</TableHead>
-          <TableHead>Propiedad</TableHead>
-          <TableHead>Huésped</TableHead>
-          <TableHead className="text-right">Noches</TableHead>
-          <TableHead className="text-right">Total</TableHead>
-          <TableHead className="text-right">Pagado</TableHead>
-          <TableHead>Estado</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {sorted.map((r) => (
-          <TableRow key={r.id}>
-            <TableCell>{formatDateShort(r.check_in)}</TableCell>
-            <TableCell>{formatDateShort(r.check_out)}</TableCell>
-            <TableCell>
-              <span className="inline-flex items-center gap-2">
-                <span
-                  className="h-2 w-2 rounded-full"
-                  style={{ backgroundColor: r.property?.color_hex ?? "#A47148" }}
-                />
-                {r.property?.name ?? "—"}
-              </span>
-            </TableCell>
-            <TableCell>{r.guest?.name ?? "—"}</TableCell>
-            <TableCell className="numeric text-right">{r.nights}</TableCell>
-            <TableCell className="numeric text-right">
-              {formatCurrency(r.total_amount_ars)}
-            </TableCell>
-            <TableCell className="numeric text-right">
-              {formatCurrency(r.amount_paid_ars)}
-            </TableCell>
-            <TableCell className="text-xs text-muted-foreground">
-              {STATUS_LABEL[r.status] ?? r.status}
-            </TableCell>
-          </TableRow>
-        ))}
-        <TableRow className="bg-secondary/40 hover:bg-secondary/40 font-medium">
-          <TableCell colSpan={4}>
-            Totales · {rows.length} reservas
-            {!occupancyMissing && ` · ${totalNights} noches`}
-          </TableCell>
-          <TableCell className="numeric text-right">
-            {occupancyMissing ? "" : totalNights}
-          </TableCell>
-          <TableCell className="numeric text-right">
-            {formatCurrency(totalRevenue)}
-          </TableCell>
-          <TableCell className="numeric text-right">
-            {formatCurrency(totalPaid)}
-          </TableCell>
-          <TableCell className="text-xs text-muted-foreground">
-            {totalRevenue > totalPaid
-              ? `Saldo ${formatCurrency(totalRevenue - totalPaid)}`
-              : "Cobrado"}
-          </TableCell>
-        </TableRow>
-      </TableBody>
-    </Table>
-  );
-}
-
