@@ -130,7 +130,9 @@ export function FixedChecklist({
     <Card>
       <CardHeader className="flex-row items-center justify-between space-y-0 pb-3">
         <div>
-          <CardTitle className="capitalize">Gastos fijos · {periodLabel}</CardTitle>
+          <CardTitle className="text-base font-medium capitalize">
+            {periodLabel}
+          </CardTitle>
           <p className="mt-1 text-xs text-muted-foreground">
             {paidCount}/{totalCount} pagados este mes
           </p>
