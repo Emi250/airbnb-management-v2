@@ -36,6 +36,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { SectionHeading } from "@/components/dashboard/section-heading";
 import { expenseSchema, type ExpenseInput } from "@/lib/schemas";
 import { formatCurrency, formatDateShort, formatPercent } from "@/lib/format";
 import { EXPENSE_CATEGORY_LABEL } from "@/lib/reservation-options";
@@ -212,6 +213,7 @@ export function ExpensesView({
 
   return (
     <div className="space-y-6">
+      {/* Barra de filtros + acción de alta. */}
       <div className="flex flex-wrap items-end gap-3">
         <div className="space-y-1.5">
           <Label className="text-xs text-muted-foreground">Año</Label>
@@ -272,6 +274,7 @@ export function ExpensesView({
         </div>
       </div>
 
+      {/* KPI del mes — total + tendencia MoM, claramente arriba. */}
       <Card className="border-2">
         <CardContent className="flex flex-wrap items-center justify-between gap-4 p-6">
           <div className="flex items-center gap-3">
@@ -310,64 +313,79 @@ export function ExpensesView({
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="lg:col-span-1">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Composición de egresos</CardTitle>
+      {/* Composición de egresos — grilla de 2 columnas balanceada
+          (donut | desglose por categoría), patrón de AnalisisSection. */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base font-medium">
+              Composición de egresos
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <ExpenseDonut totalsByCategory={totalsByCategory} height={240} />
+            <ExpenseDonut totalsByCategory={totalsByCategory} height={260} />
           </CardContent>
         </Card>
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:col-span-2">
-          {Object.entries(EXPENSE_CATEGORY_LABEL).map(([cat, label]) => {
-            const total = totalsByCategory[cat] ?? 0;
-            const pct = totalAll > 0 ? total / totalAll : 0;
-            const color =
-              EXPENSE_CATEGORY_COLOR[cat as ExpenseCategory] ?? "#94a3b8";
-            return (
-              <Card key={cat}>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span
-                        className="h-2.5 w-2.5 shrink-0 rounded-full"
-                        style={{ backgroundColor: color }}
-                      />
-                      <p className="truncate text-xs uppercase text-muted-foreground">
-                        {label}
-                      </p>
-                    </div>
-                    <p className="text-xs font-medium text-muted-foreground">
-                      {formatPercent(pct)}
-                    </p>
-                  </div>
-                  <p className="numeric mt-1.5 text-lg font-semibold">
-                    {formatCurrency(total)}
-                  </p>
-                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-secondary">
-                    <div
-                      className="h-full rounded-full transition-all"
-                      style={{
-                        width: `${Math.max(pct * 100, total > 0 ? 2 : 0)}%`,
-                        backgroundColor: color,
-                      }}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base font-medium">
+              Desglose por categoría
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {totalAll === 0 ? (
+              <p className="py-8 text-center text-sm text-muted-foreground">
+                No hay gastos en el período seleccionado.
+              </p>
+            ) : (
+              <ul className="divide-y divide-border">
+                {Object.entries(EXPENSE_CATEGORY_LABEL)
+                  .map(([cat, label]) => {
+                    const total = totalsByCategory[cat] ?? 0;
+                    const pct = totalAll > 0 ? total / totalAll : 0;
+                    const color =
+                      EXPENSE_CATEGORY_COLOR[cat as ExpenseCategory] ?? "#94a3b8";
+                    return { cat, label, total, pct, color };
+                  })
+                  .sort((a, b) => b.total - a.total)
+                  .map(({ cat, label, total, pct, color }) => (
+                    <li key={cat} className="py-3 first:pt-0 last:pb-0">
+                      <div className="flex items-center gap-3">
+                        <span
+                          className="h-2.5 w-2.5 shrink-0 rounded-full"
+                          style={{ backgroundColor: color }}
+                          aria-hidden
+                        />
+                        <span className="min-w-0 flex-1 truncate text-sm font-medium">
+                          {label}
+                        </span>
+                        <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                          {formatPercent(pct)}
+                        </span>
+                        <span className="numeric w-32 shrink-0 text-right text-sm font-medium">
+                          {formatCurrency(total)}
+                        </span>
+                      </div>
+                      <div className="mt-2 ml-[1.375rem] h-1.5 overflow-hidden rounded-full bg-secondary">
+                        <div
+                          className="h-full rounded-full transition-all"
+                          style={{
+                            width: `${Math.max(pct * 100, total > 0 ? 2 : 0)}%`,
+                            backgroundColor: color,
+                          }}
+                        />
+                      </div>
+                    </li>
+                  ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
-      <FixedChecklist
-        items={fixedItems}
-        checks={filteredChecks}
-        period={checklistPeriod}
-      />
-
+      {/* Historial de gastos — con punto de color de categoría por fila
+          para conectarlo visualmente con el donut. */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Historial de gastos</CardTitle>
@@ -390,41 +408,73 @@ export function ExpensesView({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredExpenses.map((e) => (
-                  <TableRow key={e.id}>
-                    <TableCell>{formatDateShort(e.date)}</TableCell>
-                    <TableCell>
-                      {e.property ? (
+                {filteredExpenses.map((e) => {
+                  const catColor =
+                    EXPENSE_CATEGORY_COLOR[e.category as ExpenseCategory] ??
+                    "#94a3b8";
+                  return (
+                    <TableRow key={e.id}>
+                      <TableCell>{formatDateShort(e.date)}</TableCell>
+                      <TableCell>
+                        {e.property ? (
+                          <span className="inline-flex items-center gap-2">
+                            <span
+                              className="h-2 w-2 rounded-full"
+                              style={{
+                                backgroundColor: e.property.color_hex ?? "#A47148",
+                              }}
+                            />
+                            {e.property.name}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">General</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
                         <span className="inline-flex items-center gap-2">
                           <span
-                            className="h-2 w-2 rounded-full"
-                            style={{ backgroundColor: e.property.color_hex ?? "#A47148" }}
+                            className="h-2.5 w-2.5 shrink-0 rounded-full"
+                            style={{ backgroundColor: catColor }}
+                            aria-hidden
                           />
-                          {e.property.name}
+                          {EXPENSE_CATEGORY_LABEL[e.category as ExpenseCategory] ??
+                            e.category}
                         </span>
-                      ) : (
-                        <span className="text-muted-foreground">General</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {EXPENSE_CATEGORY_LABEL[e.category as ExpenseCategory] ?? e.category}
-                    </TableCell>
-                    <TableCell>{e.description ?? "—"}</TableCell>
-                    <TableCell className="numeric text-right">
-                      {formatCurrency(e.amount_ars)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" onClick={() => onDelete(e.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                      </TableCell>
+                      <TableCell>{e.description ?? "—"}</TableCell>
+                      <TableCell className="numeric text-right">
+                        {formatCurrency(e.amount_ars)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => onDelete(e.id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           )}
         </CardContent>
       </Card>
+
+      {/* Gastos fijos — bloque final, separado del flujo KPI→historial. */}
+      <section className="space-y-4 pt-2">
+        <SectionHeading
+          title="Gastos fijos del mes"
+          subtitle="Checklist de gastos recurrentes a pagar en el período."
+        />
+        <FixedChecklist
+          items={fixedItems}
+          checks={filteredChecks}
+          period={checklistPeriod}
+        />
+      </section>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
