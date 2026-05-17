@@ -5,16 +5,21 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { AlertTriangle } from "lucide-react";
+import { differenceInDays } from "date-fns";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { formatDateLong } from "@/lib/format";
+import { formatDateLong, toDate } from "@/lib/format";
 import { exchangeRateSchema, propertySchema, type ExchangeRateInput, type PropertyInput } from "@/lib/schemas";
 import { updateExchangeRateAction, updatePropertyAction } from "./actions";
 import type { ExchangeRate, Property, UserRoleRow } from "@/types/supabase";
+
+/** Umbral en días tras el cual la cotización se considera desactualizada. */
+const RATE_STALE_DAYS = 7;
 
 export function SettingsClient({
   properties,
@@ -64,6 +69,12 @@ function RateForm({ rate }: { rate: ExchangeRate }) {
     defaultValues: { ars_per_usd: rate.ars_per_usd, ars_per_eur: rate.ars_per_eur },
   });
 
+  // Antigüedad de la cotización derivada del updated_at existente.
+  const ageDays = rate.updated_at
+    ? differenceInDays(new Date(), toDate(rate.updated_at))
+    : 0;
+  const isStale = ageDays > RATE_STALE_DAYS;
+
   function onSubmit(values: ExchangeRateInput) {
     startTransition(async () => {
       const r = await updateExchangeRateAction(values);
@@ -81,9 +92,24 @@ function RateForm({ rate }: { rate: ExchangeRate }) {
         <CardTitle>Tipos de cambio</CardTitle>
       </CardHeader>
       <CardContent>
-        <p className="text-xs text-muted-foreground mb-4">
-          Última actualización: {formatDateLong(rate.updated_at)}
-        </p>
+        {isStale ? (
+          <div className="mb-4 flex items-start gap-2 rounded-lg border border-warning/40 bg-warning/10 p-3 text-warning">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+            <div className="text-xs">
+              <p className="font-medium">
+                La cotización tiene más de una semana.
+              </p>
+              <p className="text-warning/80">
+                Última actualización: {formatDateLong(rate.updated_at)} ({ageDays}{" "}
+                días). Actualizala para que los montos en USD y EUR sean precisos.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <p className="mb-4 text-xs text-muted-foreground">
+            Última actualización: {formatDateLong(rate.updated_at)}
+          </p>
+        )}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 max-w-md">
           <div className="space-y-2">
             <Label>ARS por USD</Label>
@@ -115,6 +141,7 @@ function PropertyForm({ property }: { property: Property }) {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<PropertyInput>({
     resolver: zodResolver(propertySchema),
@@ -127,6 +154,9 @@ function PropertyForm({ property }: { property: Property }) {
       active: property.active,
     },
   });
+
+  // Color elegido en vivo — alimenta el swatch junto al picker.
+  const currentColor = watch("color_hex") ?? "#A47148";
 
   function onSubmit(values: PropertyInput) {
     startTransition(async () => {
@@ -141,8 +171,8 @@ function PropertyForm({ property }: { property: Property }) {
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0">
-        <CardTitle className="flex items-center gap-3">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+        <CardTitle className="flex items-center gap-3 text-base font-medium">
           <span
             className="h-3 w-3 rounded-full"
             style={{ backgroundColor: property.color_hex ?? "#A47148" }}
@@ -155,29 +185,45 @@ function PropertyForm({ property }: { property: Property }) {
         </div>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2 md:col-span-2">
-            <Label>Nombre</Label>
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+        >
+          <div className="space-y-1.5 sm:col-span-2 lg:col-span-3">
+            <Label className="text-xs">Nombre</Label>
             <Input {...register("name")} />
-            {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
+            {errors.name && (
+              <p className="text-xs text-destructive">{errors.name.message}</p>
+            )}
           </div>
-          <div className="space-y-2 md:col-span-2">
-            <Label>Dirección</Label>
+          <div className="space-y-1.5 sm:col-span-2 lg:col-span-3">
+            <Label className="text-xs">Dirección</Label>
             <Input {...register("address")} />
           </div>
-          <div className="space-y-2">
-            <Label>Precio base (ARS)</Label>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Precio base (ARS)</Label>
             <Input type="number" step="0.01" {...register("base_price_ars")} />
           </div>
-          <div className="space-y-2">
-            <Label>Limpieza (ARS)</Label>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Limpieza (ARS)</Label>
             <Input type="number" step="0.01" {...register("cleaning_fee_ars")} />
           </div>
-          <div className="space-y-2">
-            <Label>Color</Label>
-            <Input type="color" {...register("color_hex")} className="h-9 w-20" />
+          <div className="space-y-1.5">
+            <Label className="text-xs">Color</Label>
+            <div className="flex items-center gap-2">
+              <span
+                className="h-9 w-9 shrink-0 rounded-md border border-border"
+                style={{ backgroundColor: currentColor }}
+                aria-hidden
+              />
+              <Input
+                type="color"
+                {...register("color_hex")}
+                className="h-9 w-full min-w-0 p-1"
+              />
+            </div>
           </div>
-          <div className="md:col-span-2 flex justify-end">
+          <div className="flex justify-end sm:col-span-2 lg:col-span-3">
             <Button type="submit" disabled={isPending}>
               {isPending ? "Guardando..." : "Guardar cambios"}
             </Button>
