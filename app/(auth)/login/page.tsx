@@ -7,7 +7,7 @@ export default function LoginPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   return (
-    <main className="min-h-screen flex items-center justify-center bg-background px-6">
+    <main className="min-h-[100dvh] flex items-center justify-center bg-background px-6">
       <div className="w-full max-w-md">
         <div className="mb-10 flex flex-col items-center text-center">
           <BrandLogo size="lg" />

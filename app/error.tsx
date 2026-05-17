@@ -15,7 +15,7 @@ export default function GlobalError({
   }, [error]);
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-6">
+    <main className="flex min-h-[100dvh] items-center justify-center px-6">
       <div className="text-center max-w-md">
         <p className="text-sm font-mono uppercase text-muted-foreground">Error</p>
         <h1 className="mt-2 text-2xl font-semibold">Algo salió mal</h1>

@@ -246,7 +246,7 @@ function Stat({
         <p className="text-xs uppercase text-muted-foreground">{label}</p>
         <p
           className={`numeric mt-2 text-2xl font-semibold ${
-            accent === "positive" ? "text-emerald-500" : accent === "negative" ? "text-destructive" : ""
+            accent === "positive" ? "text-success" : accent === "negative" ? "text-destructive" : ""
           }`}
         >
           {value}

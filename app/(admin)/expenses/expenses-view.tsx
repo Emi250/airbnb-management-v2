@@ -298,7 +298,7 @@ export function ExpensesView({
               <p
                 className={cn(
                   "mt-1 inline-flex items-center gap-1 text-xs",
-                  delta >= 0 ? "text-destructive" : "text-emerald-500"
+                  delta >= 0 ? "text-destructive" : "text-success"
                 )}
               >
                 {delta >= 0 ? (

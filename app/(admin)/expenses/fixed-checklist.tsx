@@ -154,7 +154,7 @@ export function FixedChecklist({
                   className={cn(
                     "flex items-center justify-between gap-2 rounded-md border px-3 py-2 transition-colors",
                     paid
-                      ? "border-emerald-500/40 bg-emerald-500/5"
+                      ? "border-success/40 bg-success/5"
                       : "border-dashed border-border bg-background"
                   )}
                 >
@@ -168,7 +168,7 @@ export function FixedChecklist({
                       className={cn(
                         "flex h-5 w-5 items-center justify-center rounded-full border",
                         paid
-                          ? "border-emerald-500 bg-emerald-500 text-white"
+                          ? "border-success bg-success text-success-foreground"
                           : "border-border"
                       )}
                     >
