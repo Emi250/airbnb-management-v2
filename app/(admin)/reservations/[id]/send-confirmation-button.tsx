@@ -2,7 +2,8 @@
 
 import { MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { whatsAppLink, formatNumber } from "@/lib/format";
+import { formatNumber } from "@/lib/format";
+import { normalizeArPhone, buildWhatsAppLink } from "@/lib/notifications/whatsapp";
 
 function buildMessage(guestName: string, totalAmount: number): string {
   const greeting = guestName.trim() ? `Hola ${guestName.trim()}!` : "Hola!";
@@ -28,9 +29,9 @@ export function SendConfirmationButton({
   guestPhone: string | null;
   totalAmount: number;
 }) {
-  const baseLink = whatsAppLink(guestPhone);
+  const phone = normalizeArPhone(guestPhone);
 
-  if (!baseLink) {
+  if (!phone) {
     return (
       <span
         title="Agregá un teléfono al huésped para enviar la confirmación"
@@ -47,9 +48,7 @@ export function SendConfirmationButton({
     );
   }
 
-  const href = `${baseLink}?text=${encodeURIComponent(
-    buildMessage(guestName, totalAmount)
-  )}`;
+  const href = buildWhatsAppLink(phone, buildMessage(guestName, totalAmount));
 
   return (
     <Button
