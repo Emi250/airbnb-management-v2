@@ -4,6 +4,7 @@ import { getReservation, listGuests, listProperties } from "@/lib/queries/reserv
 import { ReservationForm } from "../reservation-form";
 import { StatusBadge, PaidBadge } from "@/components/status-badge";
 import { formatCurrency, formatDateLong } from "@/lib/format";
+import { SendConfirmationButton } from "./send-confirmation-button";
 
 export default async function ReservationDetailPage({
   params,
@@ -24,6 +25,14 @@ export default async function ReservationDetailPage({
         title={`Reserva · ${r.guest?.name ?? "Sin huésped"}`}
         description={`${formatDateLong(r.check_in)} → ${formatDateLong(r.check_out)}`}
       />
+
+      <div className="mb-6">
+        <SendConfirmationButton
+          guestName={r.guest?.name ?? ""}
+          guestPhone={r.guest?.phone ?? null}
+          totalAmount={r.total_amount_ars}
+        />
+      </div>
 
       <div className="mb-6 grid gap-3 sm:grid-cols-4">
         <Tile label="Estado">
