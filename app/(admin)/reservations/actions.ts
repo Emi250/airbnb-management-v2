@@ -4,6 +4,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { reservationSchema, type ReservationInput } from "@/lib/schemas";
+import {
+  archiveNotionReservation,
+  createNotionReservation,
+  updateNotionReservation,
+  type NotionReservationData,
+} from "@/lib/notion/reservations";
 
 async function ensureAdmin() {
   const supabase = await createClient();
@@ -21,6 +27,77 @@ async function ensureAdmin() {
 }
 
 export type ActionResult = { success: true; id?: string } | { success: false; error: string };
+
+// Sincronización best-effort con el calendario de Notion: corre después de
+// escribir la reserva en la BD y nunca hace fallar la acción — si Notion no
+// responde, la web sigue funcionando y el error queda en el log del server.
+async function syncReservationToNotion(
+  supabase: Awaited<ReturnType<typeof ensureAdmin>>,
+  id: string
+): Promise<void> {
+  try {
+    const { data, error } = await supabase
+      .from("reservations")
+      .select(
+        "check_in, check_out, num_guests, total_amount_ars, status, notion_page_id, property:properties(name), guest:guests(name, phone)"
+      )
+      .eq("id", id)
+      .maybeSingle();
+    if (error || !data) {
+      if (error) console.error("[notion] no se pudo leer la reserva:", error.message);
+      return;
+    }
+    const row = data as unknown as {
+      check_in: string;
+      check_out: string;
+      num_guests: number;
+      total_amount_ars: number;
+      status: string;
+      notion_page_id: string | null;
+      property: { name: string } | null;
+      guest: { name: string; phone: string | null } | null;
+    };
+
+    if (row.status === "cancelled") {
+      if (!row.notion_page_id) return;
+      const archived = await archiveNotionReservation(row.notion_page_id);
+      if (!archived.ok) {
+        console.error(`[notion] no se pudo archivar la página de la reserva ${id}:`, archived.error);
+        return;
+      }
+      await supabase.from("reservations").update({ notion_page_id: null }).eq("id", id);
+      return;
+    }
+
+    const notionData: NotionReservationData = {
+      guestName: row.guest?.name ?? null,
+      guestPhone: row.guest?.phone ?? null,
+      propertyName: row.property?.name ?? null,
+      checkIn: row.check_in,
+      checkOut: row.check_out,
+      numGuests: row.num_guests,
+      totalAmountArs: row.total_amount_ars,
+    };
+
+    if (row.notion_page_id) {
+      const updated = await updateNotionReservation(row.notion_page_id, notionData);
+      if (updated.ok) return;
+      // La página pudo borrarse a mano en Notion: se intenta recrear abajo.
+      console.error(
+        `[notion] fallo al actualizar la página de la reserva ${id} (${updated.error}); se recrea`
+      );
+    }
+
+    const created = await createNotionReservation(notionData);
+    if (!created.ok) {
+      console.error(`[notion] no se pudo crear la página de la reserva ${id}:`, created.error);
+      return;
+    }
+    await supabase.from("reservations").update({ notion_page_id: created.pageId }).eq("id", id);
+  } catch (err) {
+    console.error("[notion] error inesperado al sincronizar:", err);
+  }
+}
 
 export async function createReservationAction(input: ReservationInput): Promise<ActionResult> {
   const parsed = reservationSchema.safeParse(input);
@@ -67,6 +144,8 @@ export async function createReservationAction(input: ReservationInput): Promise<
       .single();
 
     if (error) return { success: false, error: friendlyError(error.message) };
+
+    await syncReservationToNotion(supabase, data.id);
 
     revalidatePath("/reservations");
     revalidatePath("/calendar");
@@ -125,6 +204,8 @@ export async function updateReservationAction(
 
     if (error) return { success: false, error: friendlyError(error.message) };
 
+    await syncReservationToNotion(supabase, id);
+
     revalidatePath("/reservations");
     revalidatePath(`/reservations/${id}`);
     revalidatePath("/calendar");
@@ -143,6 +224,8 @@ export async function cancelReservationAction(id: string): Promise<ActionResult>
       .update({ status: "cancelled" })
       .eq("id", id);
     if (error) return { success: false, error: error.message };
+
+    await syncReservationToNotion(supabase, id);
 
     revalidatePath("/reservations");
     revalidatePath("/calendar");
