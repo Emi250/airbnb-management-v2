@@ -74,6 +74,7 @@ type ReservationRow = {
   notes: string | null;
   nights: number;
   checkin_reminder_sent_at: string | null;
+  notion_page_id: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -92,6 +93,7 @@ type ReservationInsert = {
   status?: ReservationStatus;
   notes?: string | null;
   checkin_reminder_sent_at?: string | null;
+  notion_page_id?: string | null;
   created_at?: string;
   updated_at?: string;
 };
