@@ -39,7 +39,7 @@ async function syncReservationToNotion(
     const { data, error } = await supabase
       .from("reservations")
       .select(
-        "check_in, check_out, num_guests, total_amount_ars, status, notion_page_id, property:properties(name), guest:guests(name, phone)"
+        "check_in, check_out, num_guests, total_amount_ars, amount_paid_ars, status, notion_page_id, property:properties(name), guest:guests(name, phone)"
       )
       .eq("id", id)
       .maybeSingle();
@@ -52,6 +52,7 @@ async function syncReservationToNotion(
       check_out: string;
       num_guests: number;
       total_amount_ars: number;
+      amount_paid_ars: number;
       status: string;
       notion_page_id: string | null;
       property: { name: string } | null;
@@ -77,6 +78,7 @@ async function syncReservationToNotion(
       checkOut: row.check_out,
       numGuests: row.num_guests,
       totalAmountArs: row.total_amount_ars,
+      amountPaidArs: row.amount_paid_ars,
     };
 
     if (row.notion_page_id) {

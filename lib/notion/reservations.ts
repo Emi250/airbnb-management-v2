@@ -18,6 +18,7 @@ export type NotionReservationData = {
   checkOut: string; // YYYY-MM-DD
   numGuests: number;
   totalAmountArs: number;
+  amountPaidArs: number;
 };
 
 export type NotionSyncResult = { ok: true; pageId: string } | { ok: false; error: string };
@@ -76,6 +77,9 @@ function toNotionPhone(raw: string | null): string | null {
 // fórmula calculada en Notion.
 function buildProperties(data: NotionReservationData): Record<string, unknown> {
   const phone = toNotionPhone(data.guestPhone);
+  // "Monto a pagar" en Notion = saldo pendiente al llegar: total menos lo ya
+  // abonado por anticipación. Nunca negativo.
+  const amountDue = Math.max(0, data.totalAmountArs - data.amountPaidArs);
   return {
     "Huésped": {
       title: data.guestName ? [{ text: { content: data.guestName } }] : [],
@@ -87,7 +91,7 @@ function buildProperties(data: NotionReservationData): Record<string, unknown> {
     "Check-out": { date: { start: data.checkOut } },
     "Huéspedes": { number: data.numGuests },
     "Teléfono": { phone_number: phone },
-    "Monto a pagar": { number: data.totalAmountArs },
+    "Monto a pagar": { number: amountDue },
   };
 }
 
