@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
+import { FileDown } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
+import { Button } from "@/components/ui/button";
 import { getReservation, listGuests, listProperties } from "@/lib/queries/reservations";
 import { ReservationForm } from "../reservation-form";
 import { StatusBadge, PaidBadge } from "@/components/status-badge";
@@ -26,12 +28,20 @@ export default async function ReservationDetailPage({
         description={`${formatDateLong(r.check_in)} → ${formatDateLong(r.check_out)}`}
       />
 
-      <div className="mb-6">
+      <div className="mb-6 flex flex-wrap items-center gap-2">
         <SendConfirmationButton
           guestName={r.guest?.name ?? ""}
           guestPhone={r.guest?.phone ?? null}
           totalAmount={r.total_amount_ars}
         />
+        {/* Descarga directa: el PDF se arma en el server (route handler), así
+            que alcanza con un <a download> y no suma nada al bundle. */}
+        <Button asChild variant="outline">
+          <a href={`/reservations/${r.id}/recibo`} download>
+            <FileDown aria-hidden />
+            Descargar comprobante
+          </a>
+        </Button>
       </div>
 
       <div className="mb-6 grid gap-3 sm:grid-cols-4">
