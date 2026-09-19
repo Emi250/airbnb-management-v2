@@ -1,6 +1,8 @@
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { formatCurrency, toDate } from "@/lib/format";
+import { BED_SETUP_LABEL } from "@/lib/reservation-options";
+import type { BedSetup } from "@/types/supabase";
 
 // Igual que lib/notifications/checkin-reminder.ts: el server corre en UTC, así
 // que la fecha de emisión se calcula explícitamente en hora argentina.
@@ -23,6 +25,7 @@ export type ReceiptReservation = {
   num_guests: number;
   total_amount_ars: number;
   amount_paid_ars: number;
+  bed_setup: BedSetup | null;
   property: { name: string } | null;
   guest: { name: string; phone: string | null } | null;
 };
@@ -48,13 +51,20 @@ const TITULOS: Record<ReceiptKind, string> = {
 };
 
 /**
- * En producción las propiedades se llaman "Departamento #2"; en un documento
- * formal queda mejor "Departamento N° 2". Cualquier otro nombre se respeta.
+ * Normaliza el nombre de la unidad para un documento formal.
+ *
+ * "Airbnb 2", "Departamento #2" y "Depto 2" salen todos como "Departamento
+ * N° 2": el número identifica la unidad y el canal de venta no va en un
+ * comprobante. Cualquier otro nombre se respeta tal cual.
  */
+const UNIDAD_NUMERADA =
+  /^(?:departamentos?|deptos?\.?|dptos?\.?|airbnb|unidad)\s*(?:#|n[°º.]?)?\s*(\d+)$/i;
+
 export function formatPropertyName(name: string | null | undefined): string {
-  if (!name?.trim()) return "Refugio del Corazón";
-  const match = name.trim().match(/^departamento\s*(?:#|n[°º.]?)?\s*(\d+)$/i);
-  return match ? `Departamento N° ${match[1]}` : name.trim();
+  const limpio = name?.trim();
+  if (!limpio) return "Alojamiento";
+  const match = limpio.match(UNIDAD_NUMERADA);
+  return match ? `Departamento N° ${match[1]}` : limpio;
 }
 
 /**
@@ -114,11 +124,13 @@ export function buildReceiptData(
     alojamiento: formatPropertyName(r.property?.name),
     estadia: {
       rango: formatStayRange(r.check_in, r.check_out),
-      detalle: `${plural(r.nights, "noche", "noches")} · ${plural(
-        r.num_guests,
-        "persona",
-        "personas"
-      )}`,
+      // La configuración de camas solo aparece en los departamentos que la
+      // ofrecen; en el resto el campo viene null.
+      detalle: [
+        plural(r.nights, "noche", "noches"),
+        plural(r.num_guests, "persona", "personas"),
+        ...(r.bed_setup ? [BED_SETUP_LABEL[r.bed_setup].toLowerCase()] : []),
+      ].join(" · "),
     },
     importes: {
       total: formatCurrency(total, "ARS", undefined, 0),
@@ -130,9 +142,9 @@ export function buildReceiptData(
 }
 
 /**
- * Nombre legible para el archivo descargado: qu\u00e9 es y de qui\u00e9n.
- * Ej: "Comprobante de se\u00f1a - Ariel Larrubia - 20-11-2026.pdf".
- * La fecha de check-in evita que dos estad\u00edas del mismo hu\u00e9sped colisionen
+ * Nombre legible para el archivo descargado: qué es y de quién.
+ * Ej: "Comprobante de seña - Ariel Larrubia - 20-11-2026.pdf".
+ * La fecha de check-in evita que dos estadías del mismo huésped colisionen
  * en la carpeta de descargas.
  */
 export function receiptFileName(d: ReceiptData): string {

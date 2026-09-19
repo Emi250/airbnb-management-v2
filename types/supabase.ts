@@ -6,6 +6,8 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 
 export type ReservationStatus = "confirmed" | "pending" | "cancelled" | "completed";
 export type ReservationSource = "airbnb" | "booking" | "direct" | "other";
+/** Cómo se arman las camas en los departamentos que las tienen desarmables. */
+export type BedSetup = "together" | "separate";
 export type ExpenseCategory =
   | "cleaning"
   | "maintenance"
@@ -24,6 +26,7 @@ type PropertyRow = {
   cleaning_fee_ars: number | null;
   color_hex: string | null;
   active: boolean;
+  has_split_beds: boolean;
   created_at: string;
 };
 type PropertyInsert = {
@@ -34,6 +37,7 @@ type PropertyInsert = {
   cleaning_fee_ars?: number | null;
   color_hex?: string | null;
   active?: boolean;
+  has_split_beds?: boolean;
   created_at?: string;
 };
 type PropertyUpdate = Partial<PropertyInsert>;
@@ -72,6 +76,7 @@ type ReservationRow = {
   cleaning_fee_ars: number | null;
   status: ReservationStatus;
   notes: string | null;
+  bed_setup: BedSetup | null;
   nights: number;
   checkin_reminder_sent_at: string | null;
   notion_page_id: string | null;
@@ -92,6 +97,7 @@ type ReservationInsert = {
   cleaning_fee_ars?: number | null;
   status?: ReservationStatus;
   notes?: string | null;
+  bed_setup?: BedSetup | null;
   checkin_reminder_sent_at?: string | null;
   notion_page_id?: string | null;
   created_at?: string;

@@ -19,6 +19,15 @@ export type NotionReservationData = {
   numGuests: number;
   totalAmountArs: number;
   amountPaidArs: number;
+  bedSetup: "together" | "separate" | null;
+};
+
+// Etiquetas cortas de la columna "Camas". Se duplican acá en vez de importar
+// lib/reservation-options.ts porque ese archivo usa el alias @/ y este módulo
+// corre también desde scripts/ (ver nota de arriba).
+const BED_SETUP_NOTION: Record<"together" | "separate", string> = {
+  together: "Matrimonial",
+  separate: "Separadas",
 };
 
 export type NotionSyncResult = { ok: true; pageId: string } | { ok: false; error: string };
@@ -92,6 +101,10 @@ function buildProperties(data: NotionReservationData): Record<string, unknown> {
     "Huéspedes": { number: data.numGuests },
     "Teléfono": { phone_number: phone },
     "Monto a pagar": { number: amountDue },
+    // Vacío cuando la propiedad no tiene camas desarmables.
+    "Camas": {
+      select: data.bedSetup ? { name: BED_SETUP_NOTION[data.bedSetup] } : null,
+    },
   };
 }
 

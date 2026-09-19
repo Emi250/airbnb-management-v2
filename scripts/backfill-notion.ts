@@ -55,7 +55,7 @@ async function main() {
   const { data, error } = await supabase
     .from("reservations")
     .select(
-      "id, check_in, check_out, num_guests, total_amount_ars, amount_paid_ars, notion_page_id, property:properties(name), guest:guests(name, phone)"
+      "id, check_in, check_out, num_guests, total_amount_ars, amount_paid_ars, bed_setup, notion_page_id, property:properties(name), guest:guests(name, phone)"
     )
     .in("status", ["confirmed", "pending"])
     .gte("check_out", today)
@@ -69,6 +69,7 @@ async function main() {
     num_guests: number;
     total_amount_ars: number;
     amount_paid_ars: number;
+    bed_setup: "together" | "separate" | null;
     notion_page_id: string | null;
     property: { name: string } | null;
     guest: { name: string; phone: string | null } | null;
@@ -90,6 +91,7 @@ async function main() {
       numGuests: row.num_guests,
       totalAmountArs: row.total_amount_ars,
       amountPaidArs: row.amount_paid_ars,
+      bedSetup: row.bed_setup,
     };
 
     // Si ya tiene página, intentar actualizarla. Si la página fue archivada o

@@ -18,7 +18,7 @@ import {
 import { ResetFiltersButton } from "@/components/ui/reset-filters-button";
 import { cn } from "@/lib/utils";
 import { formatDateShort, telLink, whatsAppLink } from "@/lib/format";
-import { STATUS_LABEL_PLURAL } from "@/lib/reservation-options";
+import { STATUS_LABEL_PLURAL, BED_SETUP_LABEL } from "@/lib/reservation-options";
 import { groupByCheckInDay, relativeDayLabel, type CalendarDay } from "@/lib/calendar";
 import type { Property, ReservationStatus } from "@/types/supabase";
 import type { ReservationWithRefs } from "@/lib/queries/reservations";
@@ -358,6 +358,17 @@ function ReservationCard({
           <span className="numeric">
             {r.num_guests} {r.num_guests === 1 ? "huésped" : "huéspedes"}
           </span>
+          {/* Solo en los departamentos con camas desarmables. Las separadas
+              son la excepción que hay que preparar, por eso van destacadas. */}
+          {r.bed_setup && (
+            <span
+              className={cn(
+                r.bed_setup === "separate" && "font-medium text-foreground"
+              )}
+            >
+              {BED_SETUP_LABEL[r.bed_setup]}
+            </span>
+          )}
         </div>
       </div>
 
