@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -19,7 +19,7 @@ import {
 import { DatePicker } from "@/components/ui/date-picker";
 import { reservationSchema, type ReservationInput } from "@/lib/schemas";
 import { formatCurrency } from "@/lib/format";
-import { STATUS_LABEL, SOURCE_LABEL } from "@/lib/reservation-options";
+import { STATUS_LABEL, SOURCE_LABEL, BED_SETUP_LABEL } from "@/lib/reservation-options";
 import { cn } from "@/lib/utils";
 import {
   createReservationAction,
@@ -31,6 +31,7 @@ import type {
   Guest,
   ReservationStatus,
   ReservationSource,
+  BedSetup,
 } from "@/types/supabase";
 
 type Defaults = Partial<ReservationInput> & { id?: string };
@@ -97,6 +98,8 @@ export function ReservationForm({
     handleSubmit,
     watch,
     control,
+    setValue,
+    getValues,
     formState: { errors },
   } = useForm<ReservationInput>({
     resolver: zodResolver(reservationSchema),
@@ -112,6 +115,7 @@ export function ReservationForm({
       platform_fee_ars: defaults?.platform_fee_ars ?? 0,
       cleaning_fee_ars: defaults?.cleaning_fee_ars ?? 0,
       status: defaults?.status ?? "confirmed",
+      bed_setup: defaults?.bed_setup ?? null,
       notes: defaults?.notes ?? "",
       new_guest_name: "",
       new_guest_phone: "",
@@ -120,12 +124,23 @@ export function ReservationForm({
     },
   });
 
+  const propertyId = watch("property_id");
   const checkIn = watch("check_in");
   const checkOut = watch("check_out");
   const total = Number(watch("total_amount_ars") ?? 0);
   const paid = Number(watch("amount_paid_ars") ?? 0);
   const platformFee = Number(watch("platform_fee_ars") ?? 0);
   const cleaningFee = Number(watch("cleaning_fee_ars") ?? 0);
+
+  // Solo algunos departamentos tienen la cama de dos plazas desarmable; el
+  // resto no muestra la opción y guarda null.
+  const splitBeds =
+    properties.find((p) => p.id === propertyId)?.has_split_beds ?? false;
+
+  useEffect(() => {
+    if (!splitBeds) setValue("bed_setup", null);
+    else if (!getValues("bed_setup")) setValue("bed_setup", "together");
+  }, [splitBeds, setValue, getValues]);
 
   const nights = useMemo(() => {
     if (!checkIn || !checkOut) return 0;
@@ -272,6 +287,39 @@ export function ReservationForm({
               <FieldError message={errors.num_guests?.message} />
             </div>
           </div>
+
+          {splitBeds && (
+            <div className="space-y-2 md:max-w-xs">
+              <Label>Configuración de camas</Label>
+              <Controller
+                control={control}
+                name="bed_setup"
+                render={({ field }) => (
+                  <Select
+                    value={field.value ?? "together"}
+                    onValueChange={field.onChange}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(Object.entries(BED_SETUP_LABEL) as [BedSetup, string][]).map(
+                        ([value, label]) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        )
+                      )}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              <p className="text-xs text-muted-foreground">
+                Por defecto, cama de dos plazas. Elegí separadas si el huésped
+                pidió dos camas de una plaza y media.
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="space-y-3">

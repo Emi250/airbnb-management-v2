@@ -17,6 +17,9 @@ export const reservationSchema = z
     platform_fee_ars: z.coerce.number().min(0).default(0),
     cleaning_fee_ars: z.coerce.number().min(0).default(0),
     status: z.enum(["confirmed", "pending", "cancelled", "completed"]),
+    // null = la propiedad no tiene camas desarmables. La action lo normaliza
+    // contra properties.has_split_beds antes de guardar.
+    bed_setup: z.enum(["together", "separate"]).nullable().optional(),
     notes: z.string().optional(),
   })
   .refine((d) => new Date(d.check_out) > new Date(d.check_in), {
@@ -44,6 +47,7 @@ export const propertySchema = z.object({
     .regex(/^#[0-9a-fA-F]{6}$/i, "Color inválido (#RRGGBB)")
     .default("#A47148"),
   active: z.boolean().default(true),
+  has_split_beds: z.boolean().default(false),
 });
 
 export type PropertyInput = z.infer<typeof propertySchema>;

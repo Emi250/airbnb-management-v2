@@ -77,6 +77,7 @@ export default async function ReservationDetailPage({
           platform_fee_ars: r.platform_fee_ars ?? 0,
           cleaning_fee_ars: r.cleaning_fee_ars ?? 0,
           status: r.status,
+          bed_setup: r.bed_setup,
           notes: r.notes ?? "",
         }}
         mode="edit"

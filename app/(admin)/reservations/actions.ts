@@ -28,6 +28,23 @@ async function ensureAdmin() {
 
 export type ActionResult = { success: true; id?: string } | { success: false; error: string };
 
+// La opción de camas separadas solo existe en las propiedades marcadas como
+// desarmables: el formulario ya la esconde, pero acá se normaliza contra la BD
+// para que un valor viejo no quede pegado al cambiar de departamento.
+async function resolveBedSetup(
+  supabase: Awaited<ReturnType<typeof ensureAdmin>>,
+  propertyId: string,
+  value: "together" | "separate" | null | undefined
+): Promise<"together" | "separate" | null> {
+  const { data } = await supabase
+    .from("properties")
+    .select("has_split_beds")
+    .eq("id", propertyId)
+    .maybeSingle();
+  if (!data?.has_split_beds) return null;
+  return value ?? "together";
+}
+
 // Sincronización best-effort con el calendario de Notion: corre después de
 // escribir la reserva en la BD y nunca hace fallar la acción — si Notion no
 // responde, la web sigue funcionando y el error queda en el log del server.
@@ -39,7 +56,7 @@ async function syncReservationToNotion(
     const { data, error } = await supabase
       .from("reservations")
       .select(
-        "check_in, check_out, num_guests, total_amount_ars, amount_paid_ars, status, notion_page_id, property:properties(name), guest:guests(name, phone)"
+        "check_in, check_out, num_guests, total_amount_ars, amount_paid_ars, status, bed_setup, notion_page_id, property:properties(name), guest:guests(name, phone)"
       )
       .eq("id", id)
       .maybeSingle();
@@ -54,6 +71,7 @@ async function syncReservationToNotion(
       total_amount_ars: number;
       amount_paid_ars: number;
       status: string;
+      bed_setup: "together" | "separate" | null;
       notion_page_id: string | null;
       property: { name: string } | null;
       guest: { name: string; phone: string | null } | null;
@@ -79,6 +97,7 @@ async function syncReservationToNotion(
       numGuests: row.num_guests,
       totalAmountArs: row.total_amount_ars,
       amountPaidArs: row.amount_paid_ars,
+      bedSetup: row.bed_setup,
     };
 
     if (row.notion_page_id) {
@@ -126,6 +145,12 @@ export async function createReservationAction(input: ReservationInput): Promise<
       guestId = newGuest.id;
     }
 
+    const bedSetup = await resolveBedSetup(
+      supabase,
+      parsed.data.property_id,
+      parsed.data.bed_setup
+    );
+
     const { data, error } = await supabase
       .from("reservations")
       .insert({
@@ -140,6 +165,7 @@ export async function createReservationAction(input: ReservationInput): Promise<
         platform_fee_ars: parsed.data.platform_fee_ars,
         cleaning_fee_ars: parsed.data.cleaning_fee_ars,
         status: parsed.data.status,
+        bed_setup: bedSetup,
         notes: parsed.data.notes || null,
       })
       .select("id")
@@ -186,6 +212,12 @@ export async function updateReservationAction(
       guestId = newGuest.id;
     }
 
+    const bedSetup = await resolveBedSetup(
+      supabase,
+      parsed.data.property_id,
+      parsed.data.bed_setup
+    );
+
     const { error } = await supabase
       .from("reservations")
       .update({
@@ -200,6 +232,7 @@ export async function updateReservationAction(
         platform_fee_ars: parsed.data.platform_fee_ars,
         cleaning_fee_ars: parsed.data.cleaning_fee_ars,
         status: parsed.data.status,
+        bed_setup: bedSetup,
         notes: parsed.data.notes || null,
       })
       .eq("id", id);

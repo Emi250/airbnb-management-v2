@@ -14,6 +14,7 @@ export type ReservationWithRefs = {
   cleaning_fee_ars: number | null;
   status: "confirmed" | "pending" | "cancelled" | "completed";
   notes: string | null;
+  bed_setup: "together" | "separate" | null;
   nights: number;
   created_at: string;
   updated_at: string;

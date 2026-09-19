@@ -138,6 +138,7 @@ function PropertyForm({ property }: { property: Property }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [active, setActive] = useState(property.active);
+  const [splitBeds, setSplitBeds] = useState(property.has_split_beds);
   const {
     register,
     handleSubmit,
@@ -152,6 +153,7 @@ function PropertyForm({ property }: { property: Property }) {
       cleaning_fee_ars: Number(property.cleaning_fee_ars ?? 0),
       color_hex: property.color_hex ?? "#A47148",
       active: property.active,
+      has_split_beds: property.has_split_beds,
     },
   });
 
@@ -160,7 +162,11 @@ function PropertyForm({ property }: { property: Property }) {
 
   function onSubmit(values: PropertyInput) {
     startTransition(async () => {
-      const r = await updatePropertyAction(property.id, { ...values, active });
+      const r = await updatePropertyAction(property.id, {
+        ...values,
+        active,
+        has_split_beds: splitBeds,
+      });
       if (!r.success) toast.error(r.error);
       else {
         toast.success("Propiedad actualizada");
@@ -221,6 +227,21 @@ function PropertyForm({ property }: { property: Property }) {
                 {...register("color_hex")}
                 className="h-9 w-full min-w-0 p-1"
               />
+            </div>
+          </div>
+          <div className="flex items-start gap-3 sm:col-span-2 lg:col-span-3">
+            <Switch
+              id={`split-beds-${property.id}`}
+              checked={splitBeds}
+              onCheckedChange={setSplitBeds}
+            />
+            <div className="space-y-0.5">
+              <Label htmlFor={`split-beds-${property.id}`} className="text-xs">
+                Camas desarmables
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Permite elegir camas separadas al cargar una reserva.
+              </p>
             </div>
           </div>
           <div className="flex justify-end sm:col-span-2 lg:col-span-3">
