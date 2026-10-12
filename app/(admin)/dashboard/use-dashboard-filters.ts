@@ -9,7 +9,7 @@ export type FilterCurrency = "ARS" | "USD" | "EUR";
 const RANGE_PRESETS: ReadonlyArray<RangePreset> = ["thisMonth", "lastMonth", "ytd", "last12"];
 const CURRENCIES: ReadonlyArray<FilterCurrency> = ["ARS", "USD", "EUR"];
 
-const MONTH_PATTERN = /^\d{4}-\d{2}$/;
+const MONTH_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
 const UUID_PATTERN = /^[0-9a-f-]{36}$/i;
 
 const DEFAULTS = {

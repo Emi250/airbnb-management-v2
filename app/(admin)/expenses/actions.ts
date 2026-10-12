@@ -20,8 +20,7 @@ export async function createExpenseAction(
       description: parsed.data.description || null,
     });
     if (error) return { success: false, error: error.message };
-    revalidatePath("/expenses");
-    revalidatePath("/dashboard");
+    revalidatePath("/", "layout");
     return { success: true };
   } catch (err) {
     return { success: false, error: (err as Error).message };
@@ -35,8 +34,7 @@ export async function deleteExpenseAction(
     const supabase = await ensureExpenseWriter();
     const { error } = await supabase.from("expenses").delete().eq("id", id);
     if (error) return { success: false, error: error.message };
-    revalidatePath("/expenses");
-    revalidatePath("/dashboard");
+    revalidatePath("/", "layout");
     return { success: true };
   } catch (err) {
     return { success: false, error: (err as Error).message };

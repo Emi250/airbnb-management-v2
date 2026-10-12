@@ -10,6 +10,10 @@ export function formatCurrency(
   fractionDigits = 2
 ): string {
   let value = amountArs;
+  if (currency !== "ARS") {
+    const rate = currency === "USD" ? rates?.ars_per_usd : rates?.ars_per_eur;
+    if (!rate || !Number.isFinite(rate) || rate <= 0) return "Cotización no disponible";
+  }
   if (currency === "USD" && rates) value = amountArs / rates.ars_per_usd;
   if (currency === "EUR" && rates) value = amountArs / rates.ars_per_eur;
 

@@ -4,7 +4,7 @@ export const reservationSchema = z
   .object({
     property_id: z.string().uuid({ message: "Seleccione una propiedad" }),
     guest_id: z.string().uuid().nullable().optional(),
-    new_guest_name: z.string().optional(),
+    new_guest_name: z.string().trim().optional(),
     new_guest_phone: z.string().optional(),
     new_guest_email: z.string().email("Email inválido").or(z.literal("")).optional(),
     new_guest_country: z.string().optional(),
@@ -88,16 +88,16 @@ export type FixedExpenseItemInput = z.infer<typeof fixedExpenseItemSchema>;
 
 export const fixedExpenseMarkSchema = z.object({
   item_id: z.string().uuid(),
-  period: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Período inválido"),
-  amount_ars: z.coerce.number().min(0, "Importe inválido"),
+  period: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])-01$/, "Período inválido"),
+  amount_ars: z.coerce.number().finite().positive("Importe inválido"),
   property_id: z.string().uuid().nullable().optional(),
 });
 
 export type FixedExpenseMarkInput = z.infer<typeof fixedExpenseMarkSchema>;
 
 export const exchangeRateSchema = z.object({
-  ars_per_usd: z.coerce.number().min(0),
-  ars_per_eur: z.coerce.number().min(0),
+  ars_per_usd: z.coerce.number().finite().positive("La cotización debe ser mayor a cero"),
+  ars_per_eur: z.coerce.number().finite().positive("La cotización debe ser mayor a cero"),
 });
 
 export type ExchangeRateInput = z.infer<typeof exchangeRateSchema>;

@@ -1,4 +1,4 @@
-import { format } from "date-fns";
+import { businessDateISO } from "@/lib/dates";
 import { PageHeader } from "@/components/page-header";
 import { listProperties, listReservations } from "@/lib/queries/reservations";
 import { createClient } from "@/lib/supabase/server";
@@ -20,7 +20,7 @@ export default async function CalendarPage() {
   ]);
 
   // Anchor "today" on the server to avoid SSR/CSR hydration mismatch
-  const today = format(new Date(), "yyyy-MM-dd");
+  const today = businessDateISO();
 
   return (
     <div>

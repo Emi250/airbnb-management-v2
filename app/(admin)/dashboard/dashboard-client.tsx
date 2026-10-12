@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
+import { businessToday } from "@/lib/dates";
+import { comparisonPeriod } from "@/lib/dashboard-periods";
 import {
   startOfMonth,
   endOfMonth,
@@ -8,6 +10,7 @@ import {
   subMonths,
   endOfDay,
   parseISO,
+  addDays,
 } from "date-fns";
 import {
   sumRevenue,
@@ -79,7 +82,7 @@ export function DashboardClient({
   // anchorMonth = the month the popover edits (for monthly scopes it's the scope itself; for
   // YTD / Últ. 12 it's the most recent month within scope, per IA Flow 3).
   const { range, anchorMonth } = useMemo(() => {
-    const now = new Date();
+    const now = businessToday();
     if (filters.month) {
       const d = parseISO(filters.month + "-01");
       return {
@@ -107,17 +110,17 @@ export function DashboardClient({
         };
       case "last12":
         return {
-          range: { from: subMonths(now, 12), to: endOfDay(now) },
+          range: { from: addDays(subMonths(now, 12), 1), to: endOfDay(now) },
           anchorMonth: startOfMonth(now),
         };
     }
   }, [filters.month, filters.range]);
 
-  // Previous month range — used for MoM delta. Always relative to anchorMonth.
+  // El período anterior depende del alcance elegido.
   const prevRange = useMemo(() => {
-    const prev = subMonths(anchorMonth, 1);
-    return { from: startOfMonth(prev), to: endOfDay(endOfMonth(prev)) };
-  }, [anchorMonth]);
+    const scope = filters.month || filters.range === "thisMonth" || filters.range === "lastMonth" ? "month" : filters.range;
+    return comparisonPeriod(range.from, range.to, scope);
+  }, [filters.month, filters.range, range]);
 
   // The "month being targeted" — first-of-month yyyy-MM-01.
   const monthKeyStr = useMemo(() => toMonthKey(anchorMonth), [anchorMonth]);
@@ -172,20 +175,9 @@ export function DashboardClient({
   // Pace fraction for the entire active range (day-granular elapsed/total).
   // Handles partial current month inside YTD/Last-12 correctly.
   const paceFraction = useMemo(
-    () => paceFractionForRange(new Date(), range.from, range.to),
+    () => paceFractionForRange(businessToday(), range.from, range.to),
     [range.from, range.to]
   );
-
-  // True when the active filter scope has zero applicable reservations.
-  const isEmptyScope = useMemo(() => {
-    if (filteredProps.length === 0) return true;
-    const t0 = range.from.getTime();
-    const t1 = range.to.getTime();
-    return !filteredRes.some((r) => {
-      const ci = parseISO(r.check_in).getTime();
-      return ci >= t0 && ci <= t1;
-    });
-  }, [filteredRes, filteredProps, range]);
 
   // Core KPI values for the active range.
   const kpiNumbers = useMemo(() => {
@@ -197,11 +189,11 @@ export function DashboardClient({
     const balance = outstandingBalance(filteredRes);
     const netProfit = revenueRange - expenseRange;
 
-    const ytdFrom = startOfYear(new Date());
-    const ytdTo = endOfDay(new Date());
+    const ytdFrom = startOfYear(businessToday());
+    const ytdTo = endOfDay(businessToday());
     const revenueYTD = sumRevenue(filteredRes, ytdFrom, ytdTo);
 
-    // MoM deltas — relative to the previous month from anchor.
+    // Variaciones sobre el período comparable elegido arriba.
     const revenuePrev = sumRevenue(filteredRes, prevRange.from, prevRange.to);
     const occPrev = occupancyRate(filteredRes, filteredProps, prevRange.from, prevRange.to);
     const expensePrev = sumExpenses(filteredExp, prevRange.from, prevRange.to);
@@ -268,8 +260,8 @@ export function DashboardClient({
   // propiedad sobre la misma ventana inicio-de-año → hoy). Composición de
   // funciones ya existentes; no se agrega lógica a lib/analytics.ts.
   const departmentBreakdown = useMemo(() => {
-    const ytdFrom = startOfYear(new Date());
-    const ytdTo = endOfDay(new Date());
+    const ytdFrom = startOfYear(businessToday());
+    const ytdTo = endOfDay(businessToday());
     const revenueRows = revenueByPropertyYTD(filteredRes, filteredProps);
     return filteredProps.map((p) => {
       const revRow = revenueRows.find((r) => r.name === p.name);
@@ -293,7 +285,8 @@ export function DashboardClient({
       <FilterBar filters={filters} properties={properties} />
 
       <PulsoSection
-        empty={isEmptyScope}
+        empty={filteredProps.length === 0}
+        comparisonLabel={prevRange.label}
         kpis={{
           revenue: {
             value: kpiNumbers.revenueRange,
@@ -331,7 +324,7 @@ export function DashboardClient({
       />
 
       <DetallesSection
-        empty={isEmptyScope}
+        empty={filteredProps.length === 0}
         values={{
           revenueYTD: kpiNumbers.revenueYTD,
           expensesRange: kpiNumbers.expenseRange,

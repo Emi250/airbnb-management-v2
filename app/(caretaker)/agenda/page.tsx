@@ -5,15 +5,19 @@ import { Phone, MessageCircle, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { signOutAction } from "@/app/(auth)/login/actions";
 import { whatsAppLink, telLink } from "@/lib/format";
+import { businessToday } from "@/lib/dates";
+import { readAll } from "@/lib/queries/read-all";
+import { BED_SETUP_LABEL } from "@/lib/reservation-options";
+import type { BedSetup } from "@/types/supabase";
 
 export default async function AgendaPage() {
   const supabase = await createClient();
-  const { data: rows } = await supabase
+  const { data: rows } = await readAll(() => supabase
     .from("caretaker_agenda")
     .select("*")
-    .order("check_in");
+    .order("check_in").order("id"), "la agenda");
 
-  const today = new Date();
+  const today = businessToday();
   const tomorrow = addDays(today, 1);
   const in7 = addDays(today, 7);
 
@@ -28,8 +32,7 @@ export default async function AgendaPage() {
       parseISO(r.check_in) <= in7
   );
 
-  const ownerPhone = "+5491100000000"; // placeholder — caretaker only sees a "Llamar a Emilio" button
-  const ownerTel = telLink(ownerPhone) ?? "tel:+5491100000000";
+  const ownerTel = telLink(process.env.OWNER_PHONE);
 
   return (
     <main className="min-h-[100dvh] bg-background px-4 py-6 md:px-10 md:py-10">
@@ -106,7 +109,7 @@ export default async function AgendaPage() {
           )}
         </Section>
 
-        <div className="mt-12">
+        {ownerTel && <div className="mt-12">
           <a
             href={ownerTel}
             className="flex items-center justify-center gap-3 rounded-2xl bg-primary py-5 text-xl font-semibold text-primary-foreground shadow-md"
@@ -114,7 +117,7 @@ export default async function AgendaPage() {
             <Phone className="h-6 w-6" />
             Llamar a Emilio
           </a>
-        </div>
+        </div>}
       </div>
     </main>
   );
@@ -155,6 +158,7 @@ type Row = {
   property_color: string | null;
   guest_name: string | null;
   guest_phone: string | null;
+  bed_setup: BedSetup | null;
 };
 
 function BigCard({ row, kind }: { row: Row; kind: "checkin" | "checkout" }) {
@@ -178,6 +182,9 @@ function BigCard({ row, kind }: { row: Row; kind: "checkin" | "checkout" }) {
       </p>
       {row.notes && (
         <p className="mt-3 rounded-lg bg-secondary px-3 py-2 text-base">{row.notes}</p>
+      )}
+      {row.bed_setup && (
+        <p className="mt-3 text-base font-medium">Camas: {BED_SETUP_LABEL[row.bed_setup]}</p>
       )}
       <div className="mt-5 flex flex-wrap gap-3">
         {tel && (

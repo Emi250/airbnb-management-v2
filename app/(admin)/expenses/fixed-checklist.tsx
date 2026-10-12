@@ -48,9 +48,12 @@ export function FixedChecklist({
 
   const checkByItem = useMemo(() => {
     const map = new Map<string, CheckWithAmount>();
-    for (const c of checks) map.set(c.item_id, c);
+    const visibleItems = new Set(items.map((item) => item.id));
+    for (const c of checks) {
+      if (c.expense_id && visibleItems.has(c.item_id)) map.set(c.item_id, c);
+    }
     return map;
-  }, [checks]);
+  }, [checks, items]);
 
   const paidCount = checkByItem.size;
   const totalCount = items.length;

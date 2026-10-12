@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { readAll } from "./read-all";
 
 export type ReservationWithRefs = {
   id: string;
@@ -32,27 +33,29 @@ export async function listReservations(filters?: {
   paid?: "paid" | "unpaid" | "partial";
 }) {
   const supabase = await createClient();
-  let query = supabase
-    .from("reservations")
-    .select(
-      `*, property:properties(id,name,color_hex), guest:guests(id,name,phone)`
-    )
-    .order("check_in", { ascending: false });
+  const buildQuery = () => {
+    let query = supabase
+      .from("reservations")
+      .select(
+        `*, property:properties(id,name,color_hex), guest:guests(id,name,phone)`
+      )
+      .order("check_in", { ascending: false }).order("id");
 
-  if (filters?.propertyIds && filters.propertyIds.length > 0) {
-    query = query.in("property_id", filters.propertyIds);
-  }
-  if (filters?.status && filters.status !== "all") {
-    query = query.eq("status", filters.status as "confirmed" | "pending" | "cancelled" | "completed");
-  }
-  if (filters?.source && filters.source !== "all") {
-    query = query.eq("source", filters.source as "airbnb" | "booking" | "direct" | "other");
-  }
-  if (filters?.from) query = query.gte("check_in", filters.from);
-  if (filters?.to) query = query.lte("check_out", filters.to);
+    if (filters?.propertyIds && filters.propertyIds.length > 0) {
+      query = query.in("property_id", filters.propertyIds);
+    }
+    if (filters?.status && filters.status !== "all") {
+      query = query.eq("status", filters.status as "confirmed" | "pending" | "cancelled" | "completed");
+    }
+    if (filters?.source && filters.source !== "all") {
+      query = query.eq("source", filters.source as "airbnb" | "booking" | "direct" | "other");
+    }
+    if (filters?.from) query = query.gte("check_in", filters.from);
+    if (filters?.to) query = query.lte("check_out", filters.to);
 
-  const { data, error } = await query;
-  if (error) throw error;
+    return query;
+  };
+  const { data } = await readAll(buildQuery, "las reservas");
 
   let rows = (data ?? []) as unknown as ReservationWithRefs[];
 
@@ -81,18 +84,16 @@ export async function getReservation(id: string) {
 
 export async function listProperties() {
   const supabase = await createClient();
-  const { data, error } = await supabase
+  const { data } = await readAll(() => supabase
     .from("properties")
     .select("*")
-    .order("name");
-  if (error) throw error;
+    .order("name").order("id"), "las propiedades");
   return data ?? [];
 }
 
 export async function listGuests() {
   const supabase = await createClient();
-  const { data, error } = await supabase.from("guests").select("*").order("name");
-  if (error) throw error;
+  const { data } = await readAll(() => supabase.from("guests").select("*").order("name").order("id"), "los huéspedes");
   return data ?? [];
 }
 
@@ -106,6 +107,6 @@ export async function getExchangeRate() {
     .maybeSingle();
   if (error) throw error;
   return (
-    data ?? { id: "", ars_per_usd: 1000, ars_per_eur: 1100, updated_at: new Date().toISOString() }
+    data ?? { id: "", ars_per_usd: 0, ars_per_eur: 0, updated_at: "" }
   );
 }

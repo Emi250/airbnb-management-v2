@@ -30,7 +30,7 @@ export function DetallesSection({
 
   return (
     <section className="space-y-4">
-      <SectionHeading title="Detalles del mes" />
+      <SectionHeading title="Detalles del período" />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <SecondaryKpi label="Ingresos YTD" value={fmt(values.revenueYTD)} />

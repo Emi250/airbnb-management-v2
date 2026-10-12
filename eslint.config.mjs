@@ -11,6 +11,9 @@ const eslintConfig = [
   {
     ignores: [
       ".next/**",
+      ".claude/**",
+      ".agents/**",
+      ".superpowers/**",
       "node_modules/**",
       "supabase/.branches/**",
       "supabase/.temp/**",

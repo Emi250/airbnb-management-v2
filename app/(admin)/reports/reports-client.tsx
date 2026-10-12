@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { overlappingReservations } from "@/lib/dates";
 import {
   AlertCircle,
   BarChart3,
@@ -99,6 +100,11 @@ export function ReportsClient({
     [reservations, filters]
   );
 
+  const occupancyReservations = useMemo(() => overlappingReservations(
+    reservations.filter((r) => filters.propertyIds.length === 0 || filters.propertyIds.includes(r.property_id)),
+    filters.from, filters.to
+  ), [reservations, filters]);
+
   const summary: KpiSummary = useMemo(() => {
     const totalRevenue = filteredReservations.reduce(
       (a, r) => a + Number(r.total_amount_ars),
@@ -110,7 +116,7 @@ export function ReportsClient({
     );
     const pending = Math.max(0, totalRevenue - paid);
 
-    const occupiedNights = filteredReservations.reduce(
+    const occupiedNights = occupancyReservations.reduce(
       (a, r) =>
         a + overlapNights(r.check_in, r.check_out, filters.from, filters.to),
       0
@@ -126,7 +132,7 @@ export function ReportsClient({
       occupiedNights,
       availableNights,
     };
-  }, [filteredReservations, filteredProperties.length, filters.from, filters.to]);
+  }, [filteredReservations, occupancyReservations, filteredProperties.length, filters.from, filters.to]);
 
   // Reservas con saldo a cobrar — mismo predicado que usa exportPending.
   const pendingCount = useMemo(
@@ -261,7 +267,7 @@ export function ReportsClient({
         ? properties
         : properties.filter((p) => filters.propertyIds.includes(p.id));
     const rows = props.map((p) => {
-      const list = filteredReservations.filter((r) => r.property_id === p.id);
+      const list = occupancyReservations.filter((r) => r.property_id === p.id);
       const occupied = list.reduce(
         (a, r) =>
           a + overlapNights(r.check_in, r.check_out, filters.from, filters.to),

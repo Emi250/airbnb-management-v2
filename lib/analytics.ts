@@ -1,4 +1,5 @@
-import { differenceInDays, parseISO, startOfMonth, endOfMonth, startOfDay, format } from "date-fns";
+import { differenceInCalendarDays, parseISO, startOfMonth, endOfMonth, format } from "date-fns";
+import { businessToday, overlapNights } from "@/lib/dates";
 import { es } from "date-fns/locale";
 
 type Reservation = {
@@ -40,17 +41,11 @@ export function sumExpenses(expenses: Expense[], from: Date, to: Date): number {
 }
 
 /**
- * Outstanding balance across active reservations. Confirmed/completed
- * reservations whose check-in already passed are treated as fully paid,
- * since the guest settles the remaining balance on arrival.
+ * El saldo solo se cancela con un pago registrado, nunca por el paso del tiempo.
  */
 export function outstandingBalance(reservations: Reservation[]): number {
-  const todayStart = startOfDay(new Date());
   return reservations.filter(ACTIVE).reduce((acc, r) => {
-    const checkInPassed = parseISO(r.check_in) < todayStart;
-    const settled = r.status === "confirmed" || r.status === "completed";
-    if (checkInPassed && settled) return acc;
-    return acc + (Number(r.total_amount_ars) - Number(r.amount_paid_ars));
+    return acc + Math.max(0, Number(r.total_amount_ars) - Number(r.amount_paid_ars));
   }, 0);
 }
 
@@ -61,18 +56,15 @@ export function occupancyRate(
   from: Date,
   to: Date
 ): number {
-  const days = differenceInDays(to, from) + 1;
+  const days = differenceInCalendarDays(to, from) + 1;
   const totalAvailable = days * properties.length;
-  if (totalAvailable === 0) return 0;
+  if (totalAvailable <= 0) return 0;
 
+  const propertyIds = new Set(properties.map((p) => p.id));
   let occupiedNights = 0;
   for (const r of reservations.filter(ACTIVE)) {
-    const ci = parseISO(r.check_in);
-    const co = parseISO(r.check_out);
-    const start = ci > from ? ci : from;
-    const end = co < to ? co : to;
-    const overlap = differenceInDays(end, start);
-    if (overlap > 0) occupiedNights += overlap;
+    if (!propertyIds.has(r.property_id)) continue;
+    occupiedNights += overlapNights(r.check_in, r.check_out, format(from, "yyyy-MM-dd"), format(to, "yyyy-MM-dd"));
   }
   return Math.min(1, occupiedNights / totalAvailable);
 }
@@ -94,9 +86,9 @@ export function revPar(
   from: Date,
   to: Date
 ): number {
-  const days = differenceInDays(to, from) + 1;
+  const days = differenceInCalendarDays(to, from) + 1;
   const total = days * properties.length;
-  if (total === 0) return 0;
+  if (total <= 0) return 0;
   const revenue = sumRevenue(reservations, from, to);
   return revenue / total;
 }
@@ -107,7 +99,7 @@ export function monthlyRevenueByProperty(
   properties: PropertyLite[],
   monthsBack = 12
 ) {
-  const now = new Date();
+  const now = businessToday();
   const months: { key: string; label: string; from: Date; to: Date }[] = [];
   for (let i = monthsBack - 1; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
@@ -142,7 +134,7 @@ export function monthlyOccupancyByProperty(
   properties: PropertyLite[],
   monthsBack = 12
 ) {
-  const now = new Date();
+  const now = businessToday();
   const months: { label: string; from: Date; to: Date }[] = [];
   for (let i = monthsBack - 1; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
@@ -168,7 +160,7 @@ export function monthlyOccupancyByProperty(
 }
 
 export function revenueByPropertyYTD(reservations: Reservation[], properties: PropertyLite[]) {
-  const now = new Date();
+  const now = businessToday();
   const yearStart = new Date(now.getFullYear(), 0, 1);
   return properties.map((p) => ({
     name: p.name,

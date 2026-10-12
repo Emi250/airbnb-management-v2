@@ -107,7 +107,7 @@ function RateForm({ rate }: { rate: ExchangeRate }) {
           </div>
         ) : (
           <p className="mb-4 text-xs text-muted-foreground">
-            Última actualización: {formatDateLong(rate.updated_at)}
+            {rate.updated_at ? `Última actualización: ${formatDateLong(rate.updated_at)}` : "Todavía no hay una cotización registrada."}
           </p>
         )}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 max-w-md">

@@ -210,6 +210,7 @@ type CaretakerAgendaRowDb = {
   property_color: string | null;
   guest_name: string | null;
   guest_phone: string | null;
+  bed_setup: BedSetup | null;
 };
 
 type GenericRel = {
@@ -335,6 +336,18 @@ export type Database = {
       };
     };
     Functions: {
+      save_reservation: {
+        Args: { p_id: string | null; p_input: Json };
+        Returns: string;
+      };
+      mark_fixed_paid: {
+        Args: { p_item_id: string; p_period: string; p_amount: number; p_property_id: string | null };
+        Returns: undefined;
+      };
+      unmark_fixed_paid: {
+        Args: { p_item_id: string; p_period: string };
+        Returns: undefined;
+      };
       current_user_role: {
         Args: Record<string, never>;
         Returns: string;

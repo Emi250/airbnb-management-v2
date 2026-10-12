@@ -12,8 +12,7 @@ import { ensureExpenseWriter } from "./_admin";
 type Result = { success: true } | { success: false; error: string };
 
 function revalidate() {
-  revalidatePath("/expenses");
-  revalidatePath("/dashboard");
+  revalidatePath("/", "layout");
 }
 
 export async function addFixedItemAction(
@@ -24,12 +23,13 @@ export async function addFixedItemAction(
     return { success: false, error: parsed.error.issues[0]?.message ?? "Datos inválidos" };
   try {
     const supabase = await ensureExpenseWriter();
-    const { data: maxRow } = await supabase
+    const { data: maxRow, error: maxError } = await supabase
       .from("fixed_expense_items")
       .select("position")
       .order("position", { ascending: false })
       .limit(1)
       .maybeSingle();
+    if (maxError) return { success: false, error: maxError.message };
     const nextPos = (maxRow?.position ?? 0) + 10;
     const { error } = await supabase
       .from("fixed_expense_items")
@@ -45,7 +45,7 @@ export async function addFixedItemAction(
 export async function removeFixedItemAction(id: string): Promise<Result> {
   try {
     const supabase = await ensureExpenseWriter();
-    const { error } = await supabase.from("fixed_expense_items").delete().eq("id", id);
+    const { error } = await supabase.from("fixed_expense_items").update({ active: false }).eq("id", id);
     if (error) return { success: false, error: error.message };
     revalidate();
     return { success: true };
@@ -63,44 +63,13 @@ export async function markFixedPaidAction(
   try {
     const supabase = await ensureExpenseWriter();
 
-    const { data: item, error: itemErr } = await supabase
-      .from("fixed_expense_items")
-      .select("label")
-      .eq("id", parsed.data.item_id)
-      .maybeSingle();
-    if (itemErr || !item) return { success: false, error: "Ítem no encontrado" };
-
-    const { data: existing } = await supabase
-      .from("fixed_expense_checks")
-      .select("id")
-      .eq("item_id", parsed.data.item_id)
-      .eq("period", parsed.data.period)
-      .maybeSingle();
-    if (existing) return { success: false, error: "Ya está marcado como pagado este mes" };
-
-    const { data: expense, error: expErr } = await supabase
-      .from("expenses")
-      .insert({
-        property_id: parsed.data.property_id ?? null,
-        date: parsed.data.period,
-        category: "fixed",
-        amount_ars: parsed.data.amount_ars,
-        description: item.label,
-      })
-      .select("id")
-      .single();
-    if (expErr || !expense) return { success: false, error: expErr?.message ?? "Error al crear gasto" };
-
-    const { error: checkErr } = await supabase.from("fixed_expense_checks").insert({
-      item_id: parsed.data.item_id,
-      period: parsed.data.period,
-      expense_id: expense.id,
+    const { error } = await supabase.rpc("mark_fixed_paid", {
+      p_item_id: parsed.data.item_id,
+      p_period: parsed.data.period,
+      p_amount: parsed.data.amount_ars,
+      p_property_id: parsed.data.property_id ?? null,
     });
-    if (checkErr) {
-      await supabase.from("expenses").delete().eq("id", expense.id);
-      return { success: false, error: checkErr.message };
-    }
-
+    if (error) return { success: false, error: error.message };
     revalidate();
     return { success: true };
   } catch (err) {
@@ -114,24 +83,10 @@ export async function unmarkFixedPaidAction(
 ): Promise<Result> {
   try {
     const supabase = await ensureExpenseWriter();
-    const { data: check } = await supabase
-      .from("fixed_expense_checks")
-      .select("id, expense_id")
-      .eq("item_id", itemId)
-      .eq("period", period)
-      .maybeSingle();
-    if (!check) return { success: true };
-
-    const { error: delCheckErr } = await supabase
-      .from("fixed_expense_checks")
-      .delete()
-      .eq("id", check.id);
-    if (delCheckErr) return { success: false, error: delCheckErr.message };
-
-    if (check.expense_id) {
-      await supabase.from("expenses").delete().eq("id", check.expense_id);
-    }
-
+    const { error } = await supabase.rpc("unmark_fixed_paid", {
+      p_item_id: itemId, p_period: period,
+    });
+    if (error) return { success: false, error: error.message };
     revalidate();
     return { success: true };
   } catch (err) {

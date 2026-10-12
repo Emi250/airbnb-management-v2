@@ -2,23 +2,24 @@ import { PageHeader } from "@/components/page-header";
 import { createClient } from "@/lib/supabase/server";
 import { listProperties } from "@/lib/queries/reservations";
 import { ExpensesView } from "./expenses-view";
+import { readAll } from "@/lib/queries/read-all";
 
 export default async function ExpensesPage() {
   const supabase = await createClient();
   const [expR, properties, fixedItemsR, fixedChecksR] = await Promise.all([
-    supabase
+    readAll(() => supabase
       .from("expenses")
       .select(`*, property:properties(name,color_hex)`)
-      .order("date", { ascending: false }),
+      .order("date", { ascending: false }).order("id"), "los gastos"),
     listProperties(),
-    supabase
+    readAll(() => supabase
       .from("fixed_expense_items")
       .select("*")
       .eq("active", true)
-      .order("position", { ascending: true }),
-    supabase
+      .order("position", { ascending: true }).order("id"), "el catálogo de gastos fijos"),
+    readAll(() => supabase
       .from("fixed_expense_checks")
-      .select("*, expense:expenses(amount_ars)"),
+      .select("*, expense:expenses(amount_ars)").order("id"), "los pagos de gastos fijos"),
   ]);
 
   const fixedChecks = (fixedChecksR.data ?? []).map((c) => ({

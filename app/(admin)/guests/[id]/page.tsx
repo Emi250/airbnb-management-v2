@@ -14,6 +14,7 @@ import { formatCurrency, formatDateShort, whatsAppLink } from "@/lib/format";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/status-badge";
+import { readAll, checkQueryErrors } from "@/lib/queries/read-all";
 
 export default async function GuestDetailPage({
   params,
@@ -24,12 +25,13 @@ export default async function GuestDetailPage({
   const supabase = await createClient();
   const [gR, resR] = await Promise.all([
     supabase.from("guests").select("*").eq("id", id).maybeSingle(),
-    supabase
+    readAll(() => supabase
       .from("reservations")
       .select(`*, property:properties(name,color_hex)`)
       .eq("guest_id", id)
-      .order("check_in", { ascending: false }),
+      .order("check_in", { ascending: false }).order("id"), "las reservas del huésped"),
   ]);
+  checkQueryErrors([gR]);
   const g = gR.data;
   if (!g) notFound();
   const res = resR.data ?? [];

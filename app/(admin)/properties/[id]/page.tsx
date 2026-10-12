@@ -21,6 +21,8 @@ import {
 } from "@/lib/analytics";
 import { startOfYear, startOfMonth, endOfMonth, endOfDay } from "date-fns";
 import { RevenueLineChart } from "@/components/charts/revenue-line";
+import { readAll, checkQueryErrors } from "@/lib/queries/read-all";
+import { businessToday, businessDateISO } from "@/lib/dates";
 
 export default async function PropertyDetailPage({
   params,
@@ -31,12 +33,12 @@ export default async function PropertyDetailPage({
   const supabase = await createClient();
   const [propRes, resR, expR, rateR] = await Promise.all([
     supabase.from("properties").select("*").eq("id", id).maybeSingle(),
-    supabase
+    readAll(() => supabase
       .from("reservations")
       .select(`*, guest:guests(name,phone)`)
       .eq("property_id", id)
-      .order("check_in", { ascending: false }),
-    supabase.from("expenses").select("*").eq("property_id", id).order("date", { ascending: false }),
+      .order("check_in", { ascending: false }).order("id"), "las reservas de la propiedad"),
+    readAll(() => supabase.from("expenses").select("*").eq("property_id", id).order("date", { ascending: false }).order("id"), "los gastos de la propiedad"),
     supabase
       .from("exchange_rates")
       .select("*")
@@ -44,15 +46,16 @@ export default async function PropertyDetailPage({
       .limit(1)
       .maybeSingle(),
   ]);
+  checkQueryErrors([propRes, rateR]);
 
   const property = propRes.data;
   if (!property) notFound();
 
   const reservations = resR.data ?? [];
   const expenses = expR.data ?? [];
-  const rate = rateR.data ?? { id: "", ars_per_usd: 1000, ars_per_eur: 1100, updated_at: "" };
+  const rate = rateR.data ?? { id: "", ars_per_usd: 0, ars_per_eur: 0, updated_at: "" };
 
-  const now = new Date();
+  const now = businessToday();
   const ytd = sumRevenue(reservations, startOfYear(now), endOfDay(now));
   const monthRevenue = sumRevenue(reservations, startOfMonth(now), endOfMonth(now));
   const occYtd = occupancyRate(reservations, [property], startOfYear(now), endOfDay(now));
@@ -60,8 +63,8 @@ export default async function PropertyDetailPage({
   const netYtd = ytd - totalExpensesYtd;
 
   const monthly = monthlyRevenueByProperty(reservations, [property], 12);
-  const upcoming = reservations.filter((r) => new Date(r.check_in) >= now && r.status !== "cancelled");
-  const past = reservations.filter((r) => new Date(r.check_out) < now);
+  const upcoming = reservations.filter((r) => r.check_in >= businessDateISO() && r.status !== "cancelled");
+  const past = reservations.filter((r) => r.check_out < businessDateISO());
 
   return (
     <div>

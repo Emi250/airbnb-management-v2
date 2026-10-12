@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { businessToday } from "@/lib/dates";
 import { format, subMonths } from "date-fns";
 import { es } from "date-fns/locale";
 import { ChevronDown } from "lucide-react";
@@ -37,7 +38,7 @@ const PRESETS: ReadonlyArray<[RangePreset, string]> = [
 const CURRENCIES: ReadonlyArray<FilterCurrency> = ["ARS", "USD", "EUR"];
 
 function buildLast12Months(): { value: string; label: string }[] {
-  const now = new Date();
+  const now = businessToday();
   const months: { value: string; label: string }[] = [];
   for (let i = 0; i < 12; i++) {
     const d = subMonths(now, i);

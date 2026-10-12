@@ -80,9 +80,12 @@ async function main() {
     });
     const json = await res.json();
     if (!res.ok) throw new Error(`Notion query: ${JSON.stringify(json).slice(0, 300)}`);
-    for (const p of json.results as Array<Record<string, any>>) {
+    for (const p of json.results as Array<{
+      id: string;
+      properties: Record<string, { title?: { plain_text: string }[]; date?: { start: string } | null }>;
+    }>) {
       const pr = p.properties;
-      const guest = (pr["Huésped"]?.title ?? []).map((t: any) => t.plain_text).join("");
+      const guest = (pr["Huésped"]?.title ?? []).map((t) => t.plain_text).join("");
       const ci = pr["Check-in"]?.date?.start ?? "";
       const co = pr["Check-out"]?.date?.start ?? "";
       pages.push({ id: p.id, k: key(guest, ci, co), label: `${guest} · ${ci} → ${co}` });

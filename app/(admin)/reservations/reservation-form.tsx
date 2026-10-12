@@ -165,6 +165,7 @@ export function ReservationForm({
         return;
       }
       toast.success(mode === "create" ? "Reserva creada" : "Reserva actualizada");
+      if (action.warning) toast.warning(action.warning, { duration: 10000 });
       router.push(`/reservations/${action.id}`);
       router.refresh();
     });
@@ -178,6 +179,7 @@ export function ReservationForm({
       if (!r.success) toast.error(r.error);
       else {
         toast.success("Reserva cancelada");
+        if (r.warning) toast.warning(r.warning, { duration: 10000 });
         router.push("/reservations");
         router.refresh();
       }
@@ -206,7 +208,7 @@ export function ReservationForm({
                   <SelectValue placeholder="Seleccionar..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {properties.map((p) => (
+                  {properties.filter((p) => p.active || (mode === "edit" && p.id === defaults?.property_id)).map((p) => (
                     <SelectItem key={p.id} value={p.id}>
                       {p.name}
                     </SelectItem>

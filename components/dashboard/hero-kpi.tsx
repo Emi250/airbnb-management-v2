@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 export type HeroKpiSize = "lg" | "sm";
 
 export type HeroKpiProps = {
+  comparisonLabel?: string;
   /** Spanish label, e.g. "Ingresos del mes". */
   label: string;
   /** Pre-formatted display value, e.g. "$2.430.000". Pass null when there is no data in scope. */
@@ -34,6 +35,7 @@ export type HeroKpiProps = {
 };
 
 export function HeroKpi({
+  comparisonLabel = "vs. mes anterior",
   label,
   value,
   status,
@@ -121,7 +123,7 @@ export function HeroKpi({
               momDirection === "neutral" && "text-muted-foreground"
             )}
           >
-            {momDelta} vs. mes anterior
+            {momDelta} {comparisonLabel}
           </p>
         ) : (
           <p className="text-xs text-muted-foreground">&nbsp;</p>

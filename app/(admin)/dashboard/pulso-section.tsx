@@ -19,6 +19,7 @@ export type PulsoKpiData = {
 };
 
 export type PulsoSectionProps = {
+  comparisonLabel: string;
   /** When true, the active filter scope yields no reservations. KPIs render as "—". */
   empty?: boolean;
   kpis: {
@@ -70,6 +71,7 @@ function fmtVsTarget(compare: CompareToTargetResult | null): string | null {
 }
 
 export function PulsoSection({
+  comparisonLabel,
   empty = false,
   kpis,
   chart,
@@ -96,7 +98,7 @@ export function PulsoSection({
 
   return (
     <section className="space-y-5">
-      <SectionHeading title="Pulso del mes" />
+      <SectionHeading title="Pulso del período" />
 
       {/* Jerarquía: 1 KPI hero grande arriba (ancho completo) + 3 KPIs de
           apoyo chicos en una fila debajo. En mobile los 3 de apoyo se apilan
@@ -104,7 +106,8 @@ export function PulsoSection({
       <div className="space-y-3">
         <HeroKpi
           size="lg"
-          label="Ingresos del mes"
+          label="Ingresos del período"
+          comparisonLabel={comparisonLabel}
           value={empty ? null : fmtMoney(kpis.revenue.value, currency, rate)}
           status={empty ? null : kpis.revenue.compare?.status ?? "no_target"}
           vsTarget={empty ? null : fmtVsTarget(kpis.revenue.compare)}
@@ -117,6 +120,7 @@ export function PulsoSection({
           <HeroKpi
             size="sm"
             label="Beneficio neto"
+            comparisonLabel={comparisonLabel}
             value={empty ? null : fmtMoney(kpis.netProfit.value, currency, rate)}
             status={null}
             momDelta={empty ? null : profitMom.text}
@@ -125,6 +129,7 @@ export function PulsoSection({
           <HeroKpi
             size="sm"
             label="Ocupación promedio"
+            comparisonLabel={comparisonLabel}
             value={empty ? null : formatPercent(kpis.occupancy.value)}
             status={empty ? null : kpis.occupancy.compare?.status ?? "no_target"}
             vsTarget={empty ? null : fmtVsTarget(kpis.occupancy.compare)}

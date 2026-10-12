@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import { businessToday, businessDateISO } from "@/lib/dates";
 import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -88,7 +89,7 @@ export function ExpensesView({
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  const today = useMemo(() => new Date(), []);
+  const today = useMemo(() => businessToday(), []);
   const defaultFilter: Filter = useMemo(
     () => ({ year: today.getFullYear(), month: today.getMonth() + 1 }),
     [today]
@@ -178,7 +179,7 @@ export function ExpensesView({
   } = useForm<ExpenseInput>({
     resolver: zodResolver(expenseSchema),
     defaultValues: {
-      date: new Date().toISOString().slice(0, 10),
+      date: businessDateISO(),
       category: "cleaning",
       amount_ars: 0,
       property_id: null,

@@ -48,6 +48,7 @@ async function notionFetch(
 ): Promise<{ ok: true; json: { id: string } } | { ok: false; error: string }> {
   try {
     const res = await fetch(`${NOTION_API}${path}`, {
+      signal: AbortSignal.timeout(8000),
       method,
       headers: {
         Authorization: `Bearer ${token}`,

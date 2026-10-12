@@ -6,14 +6,16 @@ import { createClient } from "@/lib/supabase/server";
 import { formatCurrency, formatDateShort, formatPercent } from "@/lib/format";
 import { startOfYear, startOfMonth, endOfMonth, endOfDay } from "date-fns";
 import { sumRevenue, occupancyRate } from "@/lib/analytics";
+import { readAll } from "@/lib/queries/read-all";
+import { businessToday, businessDateISO } from "@/lib/dates";
 
 export default async function PropertiesPage() {
   const properties = await listProperties();
   const supabase = await createClient();
-  const { data: reservations } = await supabase.from("reservations").select("*");
+  const { data: reservations } = await readAll(() => supabase.from("reservations").select("*").order("id"), "las reservas");
   const all = reservations ?? [];
 
-  const now = new Date();
+  const now = businessToday();
   const yearStart = startOfYear(now);
   const monthStart = startOfMonth(now);
   const monthEnd = endOfMonth(now);
@@ -33,7 +35,7 @@ export default async function PropertiesPage() {
           // Próxima reserva: misma lógica que la sección "Próximas reservas"
           // de la página de detalle — reservas activas con check-in futuro.
           const nextReservation = propReservations
-            .filter((r) => r.status !== "cancelled" && new Date(r.check_in) >= now)
+            .filter((r) => r.status !== "cancelled" && r.check_in >= businessDateISO())
             .sort((a, b) => a.check_in.localeCompare(b.check_in))[0];
 
           return (

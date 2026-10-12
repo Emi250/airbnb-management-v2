@@ -1,14 +1,15 @@
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/page-header";
 import { DashboardClient } from "./dashboard-client";
+import { readAll, checkQueryErrors } from "@/lib/queries/read-all";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
   const [resR, propR, expR, targetsR, rateR] = await Promise.all([
-    supabase.from("reservations").select("*").order("check_in", { ascending: true }),
-    supabase.from("properties").select("*").order("name"),
-    supabase.from("expenses").select("*").order("date", { ascending: true }),
-    supabase.from("monthly_targets").select("*"),
+    readAll(() => supabase.from("reservations").select("*").order("check_in").order("id"), "las reservas"),
+    readAll(() => supabase.from("properties").select("*").order("name").order("id"), "las propiedades"),
+    readAll(() => supabase.from("expenses").select("*").order("date").order("id"), "los gastos"),
+    readAll(() => supabase.from("monthly_targets").select("*").order("id"), "los objetivos"),
     supabase
       .from("exchange_rates")
       .select("*")
@@ -16,6 +17,7 @@ export default async function DashboardPage() {
       .limit(1)
       .maybeSingle(),
   ]);
+  checkQueryErrors([rateR]);
 
   return (
     <div>
@@ -28,9 +30,9 @@ export default async function DashboardPage() {
         rate={
           rateR.data ?? {
             id: "",
-            ars_per_usd: 1000,
-            ars_per_eur: 1100,
-            updated_at: new Date().toISOString(),
+            ars_per_usd: 0,
+            ars_per_eur: 0,
+            updated_at: "",
           }
         }
       />

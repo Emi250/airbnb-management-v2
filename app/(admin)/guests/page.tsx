@@ -3,14 +3,15 @@ import { createClient } from "@/lib/supabase/server";
 import { EmptyState } from "@/components/empty-state";
 import { Users } from "lucide-react";
 import { GuestsView } from "./guests-view";
+import { readAll } from "@/lib/queries/read-all";
 
 export default async function GuestsPage() {
   const supabase = await createClient();
   const [guestsR, resR] = await Promise.all([
-    supabase.from("guests").select("*").order("name"),
-    supabase
+    readAll(() => supabase.from("guests").select("*").order("name").order("id"), "los huéspedes"),
+    readAll(() => supabase
       .from("reservations")
-      .select("guest_id, source, total_amount_ars, status, check_in"),
+      .select("guest_id, source, total_amount_ars, status, check_in").order("id"), "las reservas"),
   ]);
   const guests = guestsR.data ?? [];
   const reservations = resR.data ?? [];
