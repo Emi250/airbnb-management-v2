@@ -139,7 +139,8 @@ export function PulsoSection({
           />
           <HeroKpi
             size="sm"
-            label="Saldo pendiente"
+            label="Saldo de reservas futuras"
+            description="Llegadas desde mañana, de todos los meses."
             value={empty ? null : fmtMoney(kpis.balance.value, currency, rate)}
             status={null}
             momDelta={null}

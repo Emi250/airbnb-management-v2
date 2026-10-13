@@ -13,6 +13,8 @@ export type HeroKpiProps = {
   comparisonLabel?: string;
   /** Spanish label, e.g. "Ingresos del mes". */
   label: string;
+  /** Optional explanation of the metric's scope. */
+  description?: string;
   /** Pre-formatted display value, e.g. "$2.430.000". Pass null when there is no data in scope. */
   value: string | null;
   /** Status chip — pass null to hide the chip entirely (e.g. for KPIs that don't track against a target). */
@@ -37,6 +39,7 @@ export type HeroKpiProps = {
 export function HeroKpi({
   comparisonLabel = "vs. mes anterior",
   label,
+  description,
   value,
   status,
   vsTarget,
@@ -114,6 +117,8 @@ export function HeroKpi({
           <Skeleton className="h-3 w-28" />
         ) : isEmpty ? (
           <p className="text-xs text-muted-foreground">Sin datos en el período</p>
+        ) : description ? (
+          <p className="text-xs text-muted-foreground">{description}</p>
         ) : momDelta ? (
           <p
             className={cn(

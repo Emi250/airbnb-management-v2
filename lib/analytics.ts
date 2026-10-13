@@ -1,5 +1,5 @@
 import { differenceInCalendarDays, parseISO, startOfMonth, endOfMonth, format } from "date-fns";
-import { businessToday, overlapNights } from "@/lib/dates";
+import { businessDateISO, businessToday, overlapNights } from "@/lib/dates";
 import { es } from "date-fns/locale";
 
 type Reservation = {
@@ -52,6 +52,14 @@ export function outstandingBalance(reservations: Reservation[]): number {
   return reservations.filter(ACTIVE).reduce((acc, r) => {
     return acc + Math.max(0, Number(r.total_amount_ars) - Number(r.amount_paid_ars));
   }, 0);
+}
+
+/** Saldo por cobrar de reservas que todavía no comenzaron, según la fecha argentina. */
+export function futureOutstandingBalance(reservations: Reservation[], now: Date = new Date()): number {
+  const today = businessDateISO(now);
+  return outstandingBalance(reservations.filter((r) =>
+    (r.status === "confirmed" || r.status === "pending") && r.check_in > today
+  ));
 }
 
 /** Occupancy rate for a date range across the listed properties: occupied nights / available nights. */

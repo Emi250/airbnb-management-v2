@@ -16,7 +16,7 @@ import {
   sumRevenue,
   sumExpenses,
   expensesForScope,
-  outstandingBalance,
+  futureOutstandingBalance,
   occupancyRate,
   adr,
   revPar,
@@ -187,7 +187,7 @@ export function DashboardClient({
     const occRange = occupancyRate(filteredRes, filteredProps, range.from, range.to);
     const adrRange = adr(filteredRes, range.from, range.to);
     const revparRange = revPar(filteredRes, filteredProps, range.from, range.to);
-    const balance = outstandingBalance(filteredRes);
+    const balance = futureOutstandingBalance(filteredRes);
     const netProfit = revenueRange - expenseRange;
 
     const ytdFrom = startOfYear(businessToday());

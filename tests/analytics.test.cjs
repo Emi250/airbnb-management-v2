@@ -2,7 +2,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { parseISO, endOfMonth } = require('date-fns');
-const { occupancyRate, outstandingBalance, sumRevenue, sumExpenses, expensesForScope } = require('../lib/analytics.ts');
+const { occupancyRate, outstandingBalance, futureOutstandingBalance, sumRevenue, sumExpenses, expensesForScope } = require('../lib/analytics.ts');
 const { exchangeRateSchema } = require('../lib/schemas.ts');
 const { formatCurrency } = require('../lib/format.ts');
 
@@ -21,6 +21,30 @@ test('una deuda permanece después del check-in y del check-out', () => {
   }
   assert.equal(outstandingBalance([{ ...reservation, status: 'cancelled' }]), 0);
   assert.equal(outstandingBalance([{ ...reservation, amount_paid_ars: 100000 }]), 0);
+});
+
+test('saldo del dashboard incluye solo llegadas futuras pendientes o confirmadas', () => {
+  const future = { ...reservation, check_in: '2026-10-14', check_out: '2026-10-16' };
+  const stays = [
+    future,
+    { ...future, status: 'pending', total_amount_ars: 50000, amount_paid_ars: 10000 },
+    { ...future, check_in: '2026-10-13' },
+    { ...future, check_in: '2026-10-12' },
+    { ...future, check_in: '2026-10-01', check_out: '2026-10-03' },
+    { ...future, status: 'cancelled' },
+    { ...future, status: 'completed' },
+    { ...future, amount_paid_ars: 100000 },
+    { ...future, amount_paid_ars: 120000 },
+  ];
+  assert.equal(futureOutstandingBalance(stays, new Date('2026-10-13T15:00:00Z')), 110000);
+  assert.equal(futureOutstandingBalance([], new Date('2026-10-13T15:00:00Z')), 0);
+  assert.equal(stays[4].amount_paid_ars, 30000);
+});
+
+test('las llegadas futuras cambian al comenzar el día en Argentina', () => {
+  const stays = [{ ...reservation, check_in: '2026-10-14', check_out: '2026-10-16' }];
+  assert.equal(futureOutstandingBalance(stays, new Date('2026-10-14T02:59:59Z')), 70000);
+  assert.equal(futureOutstandingBalance(stays, new Date('2026-10-14T03:00:00Z')), 0);
 });
 test('ocupación incluye la última noche del mes', () => {
   assert.equal(occupancyRate([reservation], [property], from, to), 1);
