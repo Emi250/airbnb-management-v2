@@ -15,6 +15,8 @@ Los pagos históricos se conservarán como saldos previos sin fecha ni medio inv
 
 Reglas confirmadas: ingresos al mes de llegada; gastos generales solo en el total del negocio; comisiones y limpieza ya están en Gastos y no se descuentan nuevamente. Corregido el filtro del dashboard que incluía gastos generales en propiedades individuales. Reportes explica la distinción entre ingresos por llegada y pagos acumulados.
 
+La exportación fiscal también respeta las propiedades seleccionadas. Antes ignoraba ese filtro y siempre exportaba el negocio completo. Los gastos generales solo se exportan cuando están incluidas todas las propiedades.
+
 Verificación local: 31 pruebas automáticas, incluyendo saldos, devoluciones, idempotencia, ediciones obsoletas, unificación, PDFs y Notion ante errores/timeout/trabajadores concurrentes. Compilación de producción y lint sin errores.
 
 Migraciones 0011–0014 aplicadas conjuntamente como `20261013011035_operational_workflows_0011_to_0014`. Ensayo transaccional con el rol authenticated del administrador: altas, cobro repetido idempotente, rechazo de edición obsoleta, unificación, devolución, cola, historial y exportación de respaldo. Todos los registros del ensayo se revirtieron. El script reproducible está en `scripts/verify-operational.sql`.

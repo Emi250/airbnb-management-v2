@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { overlappingReservations } from "@/lib/dates";
+import { expensesForScope } from "@/lib/analytics";
 import {
   AlertCircle,
   BarChart3,
@@ -331,15 +332,11 @@ export function ReportsClient({
   }
 
   function exportFiscal() {
-    // Income & expenses constrained by date range, ignoring property filter for
-    // a full fiscal picture (matches what an accountant expects).
-    const r = reservations.filter(
-      (rv) =>
-        rv.status !== "cancelled" &&
-        rv.check_in >= filters.from &&
-        rv.check_in <= filters.to
-    );
-    const e = expenses.filter(
+    // El archivo respeta las propiedades elegidas; los gastos generales se
+    // incluyen únicamente cuando el alcance es todo el negocio.
+    const r = filteredReservations;
+    const scope = filteredProperties.length === properties.length ? null : new Set(filteredProperties.map(p => p.id));
+    const e = expensesForScope(expenses, scope).filter(
       (ex) => ex.date >= filters.from && ex.date <= filters.to
     );
 
