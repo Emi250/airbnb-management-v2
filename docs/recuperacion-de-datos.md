@@ -8,11 +8,15 @@ Se cifró con Windows DPAPI para el usuario actual, se verificó la lectura y se
 
 El ensayo restauró los 370 registros en PostgreSQL PGlite en memoria, comparó el contenido completo de cada tabla, revalidó claves foráneas y aplicó las migraciones 0011–0014. Los saldos de todas las reservas coincidieron con el nuevo registro de movimientos. No se restauraron datos sobre producción ni se enviaron notificaciones.
 
+Después de publicar también se probó la descarga autenticada desde Ajustes: doce tablas y 554 registros. Su copia cifrada está en `.backups/post-operational-2026-10-13.json.dpapi`; se restauró y comparó completamente, incluyendo movimientos y estado de Notion, sin diferencias de saldo. El JSON descargado por el navegador permanece en Descargas para el usuario.
+
 ```powershell
 ./scripts/verify-backup.ps1 -Path .backups/pre-operational-2026-10-12.json.dpapi
 ```
 
 ## Nuevas copias
+
+Verificación del panel de Supabase: el proyecto está en Free Plan y el panel indica que no incluye respaldos automáticos del proyecto. No hay una restauración automática del proveedor disponible para validar con este plan. La copia manual y su ensayo de restauración no equivalen a protección automática fuera del equipo; queda por elegir un servicio de respaldo externo o un plan del proveedor que lo incluya.
 
 Ajustes permite descargar una instantánea consistente de las doce tablas del negocio, incluyendo pagos, historial y estado de Notion. Guardar el archivo en un destino privado y con respaldo independiente. El archivo descargado contiene datos personales y no está cifrado por la aplicación. El script `protect-backup.ps1` cifra una copia local para el perfil actual de Windows.
 

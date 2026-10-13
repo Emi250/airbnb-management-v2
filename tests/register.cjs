@@ -10,8 +10,9 @@ Module._resolveFilename = function (request, ...args) {
 };
 require.extensions['.ts'] = (module, filename) => {
   const { outputText } = ts.transpileModule(fs.readFileSync(filename, 'utf8'), {
-    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true },
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true, jsx: ts.JsxEmit.ReactJSX },
     fileName: filename,
   });
   module._compile(outputText, filename);
 };
+require.extensions['.tsx'] = require.extensions['.ts'];
