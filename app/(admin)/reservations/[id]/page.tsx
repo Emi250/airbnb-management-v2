@@ -45,6 +45,8 @@ export default async function ReservationDetailPage({
           guestName={r.guest?.name ?? ""}
           guestPhone={r.guest?.phone ?? null}
           totalAmount={r.total_amount_ars}
+          propertyId={r.property_id}
+          propertyName={r.property?.name ?? ""}
         />
         {/* Descarga directa: el PDF se arma en el server (route handler), así
             que alcanza con un <a download> y no suma nada al bundle. */}
