@@ -93,7 +93,7 @@ export async function listProperties() {
 
 export async function listGuests() {
   const supabase = await createClient();
-  const { data } = await readAll(() => supabase.from("guests").select("*").order("name").order("id"), "los huéspedes");
+  const { data } = await readAll(() => supabase.from("guests").select("*").is("merged_into", null).order("name").order("id"), "los huéspedes");
   return data ?? [];
 }
 

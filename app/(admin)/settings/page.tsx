@@ -2,6 +2,7 @@ import { PageHeader } from "@/components/page-header";
 import { createClient } from "@/lib/supabase/server";
 import { SettingsClient } from "./settings-client";
 import { readAll, checkQueryErrors } from "@/lib/queries/read-all";
+import { Button } from "@/components/ui/button";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -31,6 +32,11 @@ export default async function SettingsPage() {
         }
         users={usersR.data ?? []}
       />
+      <section className="mt-8 max-w-2xl space-y-3 rounded-xl border border-border bg-card p-5">
+        <h2 className="text-lg font-semibold">Respaldo de datos</h2>
+        <p className="text-sm text-muted-foreground">Descargá una copia de las reservas, huéspedes, pagos, gastos, ajustes e historial para guardar en un lugar privado. Incluye datos personales. No incluye contraseñas, archivos externos ni los archivos adjuntos de Notion.</p>
+        <Button asChild variant="outline"><a href="/api/backups" download>Descargar respaldo</a></Button>
+      </section>
     </div>
   );
 }

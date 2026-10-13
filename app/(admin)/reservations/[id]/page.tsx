@@ -1,3 +1,7 @@
+import { PaymentLedger } from "../payment-ledger";
+import { AuditHistory } from "@/components/audit-history";
+import { createClient } from "@/lib/supabase/server";
+import { readAll } from "@/lib/queries/read-all";
 import { notFound } from "next/navigation";
 import { FileDown } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
@@ -7,6 +11,7 @@ import { ReservationForm } from "../reservation-form";
 import { StatusBadge, PaidBadge } from "@/components/status-badge";
 import { formatCurrency, formatDateLong } from "@/lib/format";
 import { SendConfirmationButton } from "./send-confirmation-button";
+import Link from "next/link";
 
 export default async function ReservationDetailPage({
   params,
@@ -20,6 +25,12 @@ export default async function ReservationDetailPage({
     listGuests(),
   ]);
   if (!r) notFound();
+  const db=await createClient();
+  const [payments,history,sync]=await Promise.all([
+    readAll(()=>db.from('reservation_payments').select('*').eq('reservation_id',id).order('created_at').order('id'),'los movimientos'),
+    readAll(()=>db.from('audit_events').select('*').eq('entity_type','reservations').eq('entity_id',id).order('occurred_at',{ascending:false}).order('id'),'el historial'),
+    db.from('notion_sync_jobs').select('state').eq('reservation_id',id).maybeSingle(),
+  ]);
 
   return (
     <div className="max-w-4xl">
@@ -29,6 +40,7 @@ export default async function ReservationDetailPage({
       />
 
       <div className="mb-6 flex flex-wrap items-center gap-2">
+        <Button asChild variant="outline"><Link href="/integrations">Notion: {sync.error?'estado no disponible':sync.data?.state==='synced'?'sincronizado':sync.data?.state==='processing'?'en curso':sync.data?.state==='review_required'?'requiere revisión':'pendiente'}</Link></Button>
         <SendConfirmationButton
           guestName={r.guest?.name ?? ""}
           guestPhone={r.guest?.phone ?? null}
@@ -61,11 +73,12 @@ export default async function ReservationDetailPage({
         </Tile>
       </div>
 
-      <ReservationForm
+      <ReservationForm key={`${r.id}:${r.version}`}
         properties={properties}
         guests={guests}
         defaults={{
           id: r.id,
+          expected_version: r.version,
           property_id: r.property_id,
           guest_id: r.guest_id,
           check_in: r.check_in,
@@ -83,6 +96,8 @@ export default async function ReservationDetailPage({
         mode="edit"
       />
 
+      <PaymentLedger reservationId={r.id} version={r.version} payments={payments.data} balance={r.total_amount_ars-r.amount_paid_ars} paid={r.amount_paid_ars} cancelled={r.status==='cancelled'} />
+      <AuditHistory events={history.data} />
       <div className="mt-8 rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">
         <p>Creada: {formatDateLong(r.created_at)}</p>
         <p>Última modificación: {formatDateLong(r.updated_at)}</p>

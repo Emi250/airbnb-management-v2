@@ -1,3 +1,6 @@
+import { GuestEditor } from "../guest-editor";
+import { listGuests } from "@/lib/queries/reservations";
+import { AuditHistory } from "@/components/audit-history";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
@@ -23,13 +26,15 @@ export default async function GuestDetailPage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
-  const [gR, resR] = await Promise.all([
+  const [gR, resR, guests, history] = await Promise.all([
     supabase.from("guests").select("*").eq("id", id).maybeSingle(),
     readAll(() => supabase
       .from("reservations")
       .select(`*, property:properties(name,color_hex)`)
       .eq("guest_id", id)
       .order("check_in", { ascending: false }).order("id"), "las reservas del huésped"),
+    listGuests(),
+    readAll(()=>supabase.from("audit_events").select("*").eq("entity_type","guests").eq("entity_id",id).order("occurred_at",{ascending:false}).order("id"),"el historial"),
   ]);
   checkQueryErrors([gR]);
   const g = gR.data;
@@ -75,6 +80,7 @@ export default async function GuestDetailPage({
         </Card>
       </div>
 
+      {g.merged_into ? <p className="my-4 text-sm">Ficha archivada por unificación. <Link className="underline" href={`/guests/${g.merged_into}`}>Abrir ficha principal</Link></p> : <GuestEditor key={`${g.id}:${g.version}`} guest={g} guests={guests} reservationCount={res.length} />}
       <Table>
         <TableHeader>
           <TableRow>
@@ -105,6 +111,7 @@ export default async function GuestDetailPage({
           ))}
         </TableBody>
       </Table>
+      <AuditHistory events={history.data} />
     </div>
   );
 }

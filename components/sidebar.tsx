@@ -11,6 +11,8 @@ import {
   Receipt,
   FileText,
   Settings,
+  RefreshCw,
+  History,
   LogOut,
   Sun,
   Moon,
@@ -31,6 +33,8 @@ const NAV: { href: string; label: string; icon: typeof LayoutDashboard; roles: U
   { href: "/guests", label: "Huéspedes", icon: Users, roles: ["admin"] },
   { href: "/expenses", label: "Gastos", icon: Receipt, roles: ["admin", "manager"] },
   { href: "/reports", label: "Reportes", icon: FileText, roles: ["admin"] },
+  { href: "/integrations", label: "Integraciones", icon: RefreshCw, roles: ["admin"] },
+  { href: "/activity", label: "Actividad", icon: History, roles: ["admin"] },
   { href: "/settings", label: "Ajustes", icon: Settings, roles: ["admin"] },
 ];
 
@@ -83,7 +87,7 @@ export function Sidebar({
           </button>
         </div>
 
-        <nav className="flex-1 space-y-0.5 px-3 py-4">
+        <nav className="min-h-0 flex-1 space-y-0.5 overflow-y-auto px-3 py-4">
           {items.map(({ href, label, icon: Icon }) => {
             const active = pathname === href || pathname.startsWith(href + "/");
             return (

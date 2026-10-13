@@ -11,6 +11,7 @@ const NOTION_API = "https://api.notion.com/v1";
 const NOTION_VERSION = "2022-06-28";
 
 export type NotionReservationData = {
+  reservationId?: string;
   guestName: string | null;
   guestPhone: string | null;
   propertyName: string | null;
@@ -67,6 +68,9 @@ async function notionFetch(
     if (!res.ok) {
       return { ok: false, error: `HTTP ${res.status} ${json.message ?? text.slice(0, 300)}` };
     }
+    if (typeof json.id !== 'string' || !json.id) {
+      return { ok: false, error: 'Notion devolvió una respuesta sin identificador de página' };
+    }
     return { ok: true, json: json as { id: string } };
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : String(err) };
@@ -91,6 +95,7 @@ function buildProperties(data: NotionReservationData): Record<string, unknown> {
   // abonado por anticipación. Nunca negativo.
   const amountDue = Math.max(0, data.totalAmountArs - data.amountPaidArs);
   return {
+    ...(data.reservationId ? { 'Reserva ID': { rich_text: [{ text: { content: data.reservationId } }] } } : {}),
     "Huésped": {
       title: data.guestName ? [{ text: { content: data.guestName } }] : [],
     },
@@ -131,6 +136,7 @@ export async function updateNotionReservation(
   if ("error" in config) return { ok: false, error: config.error };
 
   const result = await notionFetch(config.token, `/pages/${pageId}`, "PATCH", {
+    archived: false,
     properties: buildProperties(data),
   });
   if (!result.ok) return result;

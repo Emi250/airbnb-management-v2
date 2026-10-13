@@ -27,3 +27,5 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     </AdminShell>
   );
 }
+
+export const maxDuration = 60;

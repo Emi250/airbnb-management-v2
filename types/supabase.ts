@@ -43,6 +43,9 @@ type PropertyInsert = {
 type PropertyUpdate = Partial<PropertyInsert>;
 
 type GuestRow = {
+  version: number;
+  merged_into: string | null;
+  merged_at: string | null;
   id: string;
   name: string;
   phone: string | null;
@@ -52,6 +55,9 @@ type GuestRow = {
   created_at: string;
 };
 type GuestInsert = {
+  version?: number;
+  merged_into?: string | null;
+  merged_at?: string | null;
   id?: string;
   name: string;
   phone?: string | null;
@@ -63,6 +69,7 @@ type GuestInsert = {
 type GuestUpdate = Partial<GuestInsert>;
 
 type ReservationRow = {
+  version: number;
   id: string;
   property_id: string;
   guest_id: string | null;
@@ -84,6 +91,7 @@ type ReservationRow = {
   updated_at: string;
 };
 type ReservationInsert = {
+  version?: number;
   id?: string;
   property_id: string;
   guest_id?: string | null;
@@ -222,12 +230,31 @@ type GenericRel = {
 };
 type Relationships = GenericRel[];
 
+export type Payment = {
+  id: string; reservation_id: string; kind: 'payment' | 'refund' | 'opening_balance';
+  amount_ars: number; paid_on: string | null; method: string; reference: string | null;
+  receipt_url: string | null; notes: string | null; actor_id: string | null; actor_name: string; created_at: string;
+};
+export type AuditEvent = {
+  id: string; entity_type: string; entity_id: string; action: string; actor_id: string | null;
+  actor_name: string; occurred_at: string; before_data: Json | null; after_data: Json | null;
+};
+export type NotionJob = {
+  reservation_id: string; generation: number; state: 'pending' | 'processing' | 'synced' | 'error' | 'review_required';
+  attempts: number; last_error: string | null; last_attempt_at: string | null; synced_at: string | null;
+  next_attempt_at: string; lock_token: string | null; locked_at: string | null; create_started: boolean;
+};
+type OperationalTable<Row> = { Row: Row; Insert: Partial<Row>; Update: Partial<Row>; Relationships: Relationships };
+
 export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "12";
   };
   public: {
     Tables: {
+      reservation_payments: OperationalTable<Payment>;
+      audit_events: OperationalTable<AuditEvent>;
+      notion_sync_jobs: OperationalTable<NotionJob>;
       properties: {
         Row: PropertyRow;
         Insert: PropertyInsert;
@@ -336,6 +363,14 @@ export type Database = {
       };
     };
     Functions: {
+      export_business_backup: { Args: Record<string, never>; Returns: Json };
+      update_guest: { Args: { p_id: string; p_version: number; p_input: Json }; Returns: undefined };
+      merge_guests: { Args: { p_source: string; p_target: string; p_source_version: number; p_target_version: number }; Returns: string };
+      record_payment: { Args: { p_reservation_id: string; p_version: number; p_input: Json }; Returns: string };
+      claim_notion_sync: { Args: { p_id: string; p_force?: boolean }; Returns: Json };
+      begin_notion_create: { Args: { p_id: string; p_token: string }; Returns: boolean };
+      finish_notion_sync: { Args: { p_id: string; p_token: string; p_generation: number; p_state: string; p_error: string | null; p_page_id: string | null }; Returns: boolean };
+      reset_notion_creation: { Args: { p_id: string }; Returns: undefined };
       save_reservation: {
         Args: { p_id: string | null; p_input: Json };
         Returns: string;

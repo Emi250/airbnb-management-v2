@@ -1,0 +1,29 @@
+node_modules
+.next
+.env
+.env.local
+.env*.local
+.DS_Store
+*.log
+.vercel
+.turbo
+out/
+dist/
+coverage/
+.backups/
+.backup-keys/
+*.tsbuildinfo
+
+# Local Claude Code config (settings, symlinked skills)
+.claude/
+
+# Supabase CLI cache (auto-created by `npx supabase ...`)
+supabase/.temp/
+.superpowers/
+
+.git/
+.agents/
+.codex/
+.backups/
+.backup-keys/
+

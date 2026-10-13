@@ -18,6 +18,11 @@ type PropertyLite = { id: string; name: string; color_hex: string | null };
 
 type Expense = { property_id: string | null; date: string; amount_ars: number; category: string };
 
+/** null = total del negocio. Los gastos generales nunca se asignan a una propiedad. */
+export function expensesForScope<T extends { property_id: string | null }>(expenses: T[], propertyIds: ReadonlySet<string> | null): T[] {
+  return propertyIds === null ? expenses : expenses.filter(e => e.property_id !== null && propertyIds.has(e.property_id));
+}
+
 const ACTIVE = (r: Reservation) => r.status !== "cancelled";
 
 /** Sum of revenue (ARS) where check_in falls in [from, to]. */

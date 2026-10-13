@@ -10,6 +10,8 @@ node_modules
 out/
 dist/
 coverage/
+.backups/
+.backup-keys/
 *.tsbuildinfo
 
 # Local Claude Code config (settings, symlinked skills)

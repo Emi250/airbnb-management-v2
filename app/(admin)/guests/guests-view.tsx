@@ -92,7 +92,7 @@ export function GuestsView({
       if (q) {
         const name = g.name?.toLowerCase() ?? "";
         const phone = g.phone?.toLowerCase() ?? "";
-        if (!name.includes(q) && !phone.includes(q)) return false;
+        if (!name.includes(q) && !phone.includes(q) && !g.email?.toLowerCase().includes(q)) return false;
       }
       if (sourceFilter !== "all") {
         const s = stats.get(g.id);
@@ -158,7 +158,7 @@ export function GuestsView({
       <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-card p-3">
         <div className="relative flex-1 min-w-[220px] max-w-sm">
           <label htmlFor={searchId} className="sr-only">
-            Buscar huésped por nombre o teléfono
+            Buscar huésped por nombre, teléfono o email
           </label>
           <Search
             className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
@@ -172,7 +172,7 @@ export function GuestsView({
             spellCheck={false}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por nombre o teléfono…"
+            placeholder="Buscar por nombre, teléfono o email…"
             className="pl-9"
           />
         </div>

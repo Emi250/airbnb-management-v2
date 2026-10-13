@@ -15,6 +15,7 @@ import {
 import {
   sumRevenue,
   sumExpenses,
+  expensesForScope,
   outstandingBalance,
   occupancyRate,
   adr,
@@ -135,8 +136,8 @@ export function DashboardClient({
     [reservations, selectedProps]
   );
   const filteredExp = useMemo(
-    () => expenses.filter((e) => !e.property_id || selectedProps.has(e.property_id)),
-    [expenses, selectedProps]
+    () => expensesForScope(expenses, selectedProps.size === properties.length ? null : selectedProps),
+    [expenses, selectedProps, properties.length]
   );
 
   // Active-property ids for the target editor (universe of editable properties = those in filter scope).
@@ -283,6 +284,7 @@ export function DashboardClient({
   return (
     <div className="space-y-8 pb-12">
       <FilterBar filters={filters} properties={properties} />
+      <p className="text-xs text-muted-foreground">Ingresos según fecha de llegada. Resultado = ingresos menos Gastos; comisiones y limpieza no se descuentan otra vez. {selectedProps.size===properties.length?'Incluye gastos generales del negocio.':'Este filtro excluye los gastos generales del negocio.'}</p>
 
       <PulsoSection
         empty={filteredProps.length === 0}

@@ -17,6 +17,7 @@ export default async function ReportsPage() {
   return (
     <div>
       <PageHeader title="Reportes" description="Generación de reportes para descarga" />
+      <p className="mb-5 text-sm text-muted-foreground">Los ingresos corresponden al mes de llegada. Comisiones y limpieza se contabilizan en Gastos, sin descontarlas otra vez. Los gastos generales se incluyen solo en el total del negocio. Los importes pagados muestran el saldo acumulado de cada reserva, no los cobros del período.</p>
       <ReportsClient
         reservations={resR.data ?? []}
         properties={propR.data ?? []}

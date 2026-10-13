@@ -1,87 +1,48 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/types/supabase";
-import {
-  archiveNotionReservation, createNotionReservation, updateNotionReservation,
-  type NotionReservationData,
-} from "./reservations";
+import type {SupabaseClient} from '@supabase/supabase-js';
+import type {Database,NotionJob} from '@/types/supabase';
+import {archiveNotionReservation,createNotionReservation,updateNotionReservation,type NotionReservationData} from './reservations';
+import {ensureNotionIdentity,findNotionReservation} from './identity';
 
-// Sincronización best-effort con el calendario de Notion: corre después de
-// escribir la reserva en la BD y nunca hace fallar la acción — si Notion no
-// responde, la web sigue funcionando y el error queda en el log del server.
-export async function syncReservationToNotion(
-  supabase: SupabaseClient<Database>,
-  id: string
-): Promise<string | undefined> {
-  if (!process.env.NOTION_TOKEN && !process.env.NOTION_DATABASE_ID) return;
+/** Un solo trabajador por reserva; una creación incierta se reconcilia, nunca se repite a ciegas. */
+export async function syncReservationToNotion(db:SupabaseClient<Database>,id:string,force=false):Promise<string|undefined> {
+  if(!process.env.NOTION_TOKEN||!process.env.NOTION_DATABASE_ID)return 'Notion no está configurado. La sincronización queda pendiente.';
+  const claimed=await db.rpc('claim_notion_sync',{p_id:id,p_force:force});
+  if(claimed.error)return 'No se pudo iniciar la sincronización. Queda pendiente.';
+  if(!claimed.data)return;
+  const job=claimed.data as unknown as NotionJob;
+  let pageId:string|null=null;let createStarted=job.create_started;
+  async function finish(state:'synced'|'error'|'review_required',error:string|null=null) {
+    const result=await db.rpc('finish_notion_sync',{p_id:id,p_token:job.lock_token!,p_generation:job.generation,p_state:state,p_error:error,p_page_id:pageId});
+    if(result.error||!result.data)throw Error('No se pudo confirmar la sincronización; revisar el estado antes de reintentar.');
+  }
   try {
-    const { data, error } = await supabase
-      .from("reservations")
-      .select(
-        "check_in, check_out, num_guests, total_amount_ars, amount_paid_ars, status, bed_setup, notion_page_id, property:properties(name), guest:guests(name, phone)"
-      )
-      .eq("id", id)
-      .maybeSingle();
-    if (error || !data) {
-      if (error) console.error("[notion] no se pudo leer la reserva:", error.message);
-      return "La reserva se guardó, pero no se pudo leer para sincronizar con Notion.";
+    const {data:r,error}=await db.from('reservations').select('*,property:properties(name),guest:guests(name,phone)').eq('id',id).maybeSingle();
+    if(error||!r)throw Error('No se pudo leer la reserva');
+    pageId=r.notion_page_id;
+    if(r.status==='cancelled'&&!pageId&&!createStarted){await finish('synced');return;}
+    await ensureNotionIdentity();
+    if(!pageId)pageId=await findNotionReservation(id);
+    if(!pageId&&createStarted){await finish('review_required','El resultado de una creación anterior es incierto. Revisá Notion antes de habilitar otra creación.');return 'Notion requiere revisión para evitar una página duplicada.';}
+    if(r.status==='cancelled'){
+      if(pageId){const result=await archiveNotionReservation(pageId);if(!result.ok)throw Error(result.error);}
+      await finish('synced');return;
     }
-    const row = data as unknown as {
-      check_in: string;
-      check_out: string;
-      num_guests: number;
-      total_amount_ars: number;
-      amount_paid_ars: number;
-      status: string;
-      bed_setup: "together" | "separate" | null;
-      notion_page_id: string | null;
-      property: { name: string } | null;
-      guest: { name: string; phone: string | null } | null;
-    };
-
-    if (row.status === "cancelled") {
-      if (!row.notion_page_id) return;
-      const archived = await archiveNotionReservation(row.notion_page_id);
-      if (!archived.ok) {
-        console.error(`[notion] no se pudo archivar la página de la reserva ${id}:`, archived.error);
-        return "La reserva se canceló, pero no se pudo archivar en Notion. Volvé a guardar para reintentar.";
-      }
-      const { error: unlinkError } = await supabase.from("reservations").update({ notion_page_id: null }).eq("id", id);
-      if (unlinkError) throw unlinkError;
-      return;
+    const data:NotionReservationData={reservationId:id,guestName:r.guest?.name??null,guestPhone:r.guest?.phone??null,propertyName:r.property?.name??null,
+      checkIn:r.check_in,checkOut:r.check_out,numGuests:r.num_guests,totalAmountArs:r.total_amount_ars,amountPaidArs:r.amount_paid_ars,bedSetup:r.bed_setup};
+    if(pageId){const result=await updateNotionReservation(pageId,data);if(!result.ok)throw Error(result.error);}
+    else {
+      const gate=await db.rpc('begin_notion_create',{p_id:id,p_token:job.lock_token!});
+      if(gate.error||!gate.data)throw Error('No se pudo reservar la creación de la página');
+      createStarted=true;
+      const result=await createNotionReservation(data);
+      if(!result.ok)throw Error(result.error);
+      pageId=result.pageId;
     }
-
-    const notionData: NotionReservationData = {
-      guestName: row.guest?.name ?? null,
-      guestPhone: row.guest?.phone ?? null,
-      propertyName: row.property?.name ?? null,
-      checkIn: row.check_in,
-      checkOut: row.check_out,
-      numGuests: row.num_guests,
-      totalAmountArs: row.total_amount_ars,
-      amountPaidArs: row.amount_paid_ars,
-      bedSetup: row.bed_setup,
-    };
-
-    if (row.notion_page_id) {
-      const updated = await updateNotionReservation(row.notion_page_id, notionData);
-      if (updated.ok) return;
-      // Un fallo de actualización no demuestra que la página haya desaparecido.
-      // Conservar el vínculo evita duplicarla ante timeouts o errores temporales.
-      console.error(
-        `[notion] fallo al actualizar la página de la reserva ${id}: ${updated.error}`
-      );
-      return "La reserva se guardó, pero Notion no se actualizó. Volvé a guardar para reintentar.";
-    }
-
-    const created = await createNotionReservation(notionData);
-    if (!created.ok) {
-      console.error(`[notion] no se pudo crear la página de la reserva ${id}:`, created.error);
-      return "La reserva se guardó, pero no se pudo crear en Notion. Revisá la integración antes de reintentar.";
-    }
-    const { error: linkError } = await supabase.from("reservations").update({ notion_page_id: created.pageId }).eq("id", id);
-    if (linkError) throw linkError;
-  } catch (err) {
-    console.error("[notion] error inesperado al sincronizar:", err);
-    return "La reserva se guardó, pero hubo un error de sincronización con Notion.";
+    await finish('synced');
+  }catch(error){
+    const message=error instanceof Error?error.message:'Error de sincronización';
+    try {await finish(createStarted&&!pageId?'review_required':'error',message.slice(0,500));}
+    catch {console.error('[notion] No se pudo confirmar el resultado de la reserva',id);}
+    return 'La reserva está guardada. Notion quedó pendiente; revisá Integraciones para reintentar.';
   }
 }

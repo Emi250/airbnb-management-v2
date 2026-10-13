@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { syncReservationToNotion } from "@/lib/notion/sync-reservation";
+import { scheduleNotionSync } from "@/lib/notion/schedule";
 import { reservationSchema, type ReservationInput } from "@/lib/schemas";
 
 async function ensureAdmin() {
@@ -36,9 +36,9 @@ async function saveReservation(id: string | null, input: ReservationInput): Prom
     });
     if (error) return { success: false, error: friendlyError(error.message) };
     if (!data) return { success: false, error: "No se pudo guardar la reserva" };
-    const warning = await syncReservationToNotion(supabase, data);
+    scheduleNotionSync(data);
     revalidatePath("/", "layout");
-    return { success: true, id: data, warning };
+    return { success: true, id: data };
   } catch (err) {
     return { success: false, error: (err as Error).message };
   }
@@ -52,19 +52,19 @@ export async function updateReservationAction(id: string, input: ReservationInpu
   return saveReservation(id, input);
 }
 
-export async function cancelReservationAction(id: string): Promise<ActionResult> {
+export async function cancelReservationAction(id: string, version: number): Promise<ActionResult> {
   try {
     const supabase = await ensureAdmin();
     const { data, error } = await supabase
       .from("reservations")
       .update({ status: "cancelled" })
-      .eq("id", id).select("id").maybeSingle();
+      .eq("id", id).eq("version",version).select("id").maybeSingle();
     if (error) return { success: false, error: error.message };
-    if (!data) return { success: false, error: "Reserva no encontrada" };
+    if (!data) return { success: false, error: "La reserva cambió o ya no está disponible. Recargá la página." };
 
-    const warning = await syncReservationToNotion(supabase, id);
+    scheduleNotionSync(id);
     revalidatePath("/", "layout");
-    return { success: true, id, warning };
+    return { success: true, id };
   } catch (err) {
     return { success: false, error: (err as Error).message };
   }

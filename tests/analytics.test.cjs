@@ -2,7 +2,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { parseISO, endOfMonth } = require('date-fns');
-const { occupancyRate, outstandingBalance } = require('../lib/analytics.ts');
+const { occupancyRate, outstandingBalance, sumRevenue, sumExpenses, expensesForScope } = require('../lib/analytics.ts');
 const { exchangeRateSchema } = require('../lib/schemas.ts');
 const { formatCurrency } = require('../lib/format.ts');
 
@@ -42,4 +42,15 @@ test('las cotizaciones deben ser positivas y finitas', () => {
   }
   assert.equal(exchangeRateSchema.safeParse({ ars_per_usd: 1000, ars_per_eur: 1200 }).success, true);
   assert.equal(formatCurrency(100000, 'USD', { ars_per_usd: 0, ars_per_eur: 1200 }), 'Cotización no disponible');
+});
+
+test('regla contable: llegada, gastos una sola vez y generales solo en el negocio', () => {
+  const stays=[{...reservation,check_in:'2026-10-31',check_out:'2026-11-03',nights:3,platform_fee_ars:10000,cleaning_fee_ars:5000}];
+  const expenses=[{property_id:'p',date:'2026-10-31',amount_ars:15000,category:'cleaning'},
+    {property_id:null,date:'2026-10-01',amount_ars:20000,category:'utilities'},
+    {property_id:'other',date:'2026-10-01',amount_ars:3000,category:'other'}];
+  assert.equal(sumRevenue(stays,from,to),100000);
+  assert.equal(sumRevenue(stays,parseISO('2026-11-01'),parseISO('2026-11-30')),0);
+  assert.equal(sumRevenue(stays,from,to)-sumExpenses(expensesForScope(expenses,new Set(['p'])),from,to),85000);
+  assert.equal(sumRevenue(stays,from,to)-sumExpenses(expensesForScope(expenses,null),from,to),62000);
 });

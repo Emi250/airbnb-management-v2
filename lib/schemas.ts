@@ -1,7 +1,16 @@
 import { z } from "zod";
 
+const realDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha requerida').refine(value => {
+  const date = new Date(value + 'T12:00:00Z');
+  return !isNaN(date.getTime()) && date.toISOString().slice(0,10) === value;
+}, 'Fecha inválida');
+
 export const reservationSchema = z
   .object({
+    expected_version: z.number().int().positive().optional(),
+    initial_payment_date: realDate.optional(),
+    initial_payment_method: z.enum(['cash','transfer','card','platform','other']).optional(),
+    initial_payment_reference: z.string().max(200).optional(),
     property_id: z.string().uuid({ message: "Seleccione una propiedad" }),
     guest_id: z.string().uuid().nullable().optional(),
     new_guest_name: z.string().trim().optional(),
@@ -53,7 +62,7 @@ export const propertySchema = z.object({
 export type PropertyInput = z.infer<typeof propertySchema>;
 
 export const guestSchema = z.object({
-  name: z.string().min(1, "Nombre requerido"),
+  name: z.string().trim().min(1, "Nombre requerido").max(200),
   phone: z.string().optional(),
   email: z.string().email("Email inválido").or(z.literal("")).optional(),
   country: z.string().optional(),
@@ -61,6 +70,21 @@ export const guestSchema = z.object({
 });
 
 export type GuestInput = z.infer<typeof guestSchema>;
+
+export const paymentSchema = z.object({
+  id: z.string().uuid(),
+  kind: z.enum(['payment','refund']),
+  amount_ars: z.coerce.number().finite().positive('Ingrese un importe mayor a cero').max(999999999999.99)
+    .refine(v => Math.abs(v*100-Math.round(v*100))<0.0001,'Use como máximo dos decimales'),
+  paid_on: realDate,
+  method: z.enum(['cash','transfer','card','platform','other']),
+  reference: z.string().trim().max(200).optional(),
+  receipt_url: z.string().trim().url('Enlace inválido').startsWith('https://','Use un enlace HTTPS').or(z.literal('')).optional(),
+  notes: z.string().trim().max(2000).optional(),
+}).refine(value => value.kind !== 'refund' || Boolean(value.notes), {
+  message: 'Indique el motivo de la devolución', path: ['notes'],
+});
+export type PaymentInput = z.infer<typeof paymentSchema>;
 
 export const expenseSchema = z.object({
   property_id: z.string().uuid().nullable().optional(),

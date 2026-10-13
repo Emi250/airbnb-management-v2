@@ -8,7 +8,7 @@ import { readAll } from "@/lib/queries/read-all";
 export default async function GuestsPage() {
   const supabase = await createClient();
   const [guestsR, resR] = await Promise.all([
-    readAll(() => supabase.from("guests").select("*").order("name").order("id"), "los huéspedes"),
+    readAll(() => supabase.from("guests").select("*").is("merged_into", null).order("name").order("id"), "los huéspedes"),
     readAll(() => supabase
       .from("reservations")
       .select("guest_id, source, total_amount_ars, status, check_in").order("id"), "las reservas"),

@@ -1,3 +1,4 @@
+import { PaymentReceipt } from "@/lib/pdf/payment-receipt";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { createClient } from "@/lib/supabase/server";
 import { loadBrandLogo } from "@/lib/pdf/brand-logo";
@@ -16,7 +17,7 @@ const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
@@ -54,13 +55,18 @@ export async function GET(
   }
   if (!data) return new Response("Reserva no encontrada", { status: 404 });
 
+  const paymentId=new URL(request.url).searchParams.get('payment');
+  if(paymentId && !UUID_RE.test(paymentId)) return new Response('Movimiento inválido',{status:400});
+  const paymentResult=paymentId?await supabase.from('reservation_payments').select('*').eq('id',paymentId).eq('reservation_id',id).maybeSingle():null;
+  if(paymentResult?.error) return new Response('Error al leer el movimiento',{status:500});
+  if(paymentId && (!paymentResult?.data || paymentResult.data.kind==='opening_balance')) return new Response('Movimiento no disponible',{status:404});
   const receipt = buildReceiptData(data as unknown as ReceiptReservation);
   const pdf = await renderToBuffer(
-    <ReceiptDocument data={receipt} logo={loadBrandLogo()} />
+    paymentResult?.data ? <PaymentReceipt payment={paymentResult.data} guest={receipt.huesped.nombre} property={receipt.alojamiento}/> : <ReceiptDocument data={receipt} logo={loadBrandLogo()} />
   );
 
   // El slug ya viene sin acentos, pero el nombre del huésped es texto libre.
-  const name = receiptFileName(receipt);
+  const name = paymentResult?.data ? 'Movimiento-'+paymentResult.data.id+'.pdf' : receiptFileName(receipt);
   const asciiName = name
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")

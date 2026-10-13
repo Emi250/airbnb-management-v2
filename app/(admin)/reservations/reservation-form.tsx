@@ -1,4 +1,7 @@
 "use client";
+import { businessDateISO } from "@/lib/dates";
+import { PAYMENT_METHODS } from "@/lib/payment-options";
+import { matchingGuests } from "@/lib/guest-matches";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -104,6 +107,10 @@ export function ReservationForm({
   } = useForm<ReservationInput>({
     resolver: zodResolver(reservationSchema),
     defaultValues: {
+      expected_version: defaults?.expected_version,
+      initial_payment_date: businessDateISO(),
+      initial_payment_method: "transfer",
+      initial_payment_reference: "",
       property_id: defaults?.property_id ?? "",
       guest_id: defaults?.guest_id ?? null,
       check_in: defaults?.check_in ?? "",
@@ -124,6 +131,8 @@ export function ReservationForm({
     },
   });
 
+  const phone=watch('new_guest_phone')??''; const email=watch('new_guest_email')??'';
+  const duplicates=matchingGuests(guests,phone,email);
   const propertyId = watch("property_id");
   const checkIn = watch("check_in");
   const checkOut = watch("check_out");
@@ -175,7 +184,7 @@ export function ReservationForm({
     if (!defaults?.id) return;
     if (!confirm("¿Cancelar esta reserva? El registro se conservará con estado 'cancelada'.")) return;
     startTransition(async () => {
-      const r = await cancelReservationAction(defaults.id!);
+      const r = await cancelReservationAction(defaults.id!, defaults.expected_version!);
       if (!r.success) toast.error(r.error);
       else {
         toast.success("Reserva cancelada");
@@ -422,6 +431,7 @@ export function ReservationForm({
           </p>
         )}
 
+        {createGuest && duplicates.length>0 && <div className="rounded-lg bg-muted p-3 text-sm"><p>Ya hay fichas con este contacto:</p>{duplicates.map(g=><Button type="button" variant="link" key={g.id} onClick={()=>{setCreateGuest(false);setValue('guest_id',g.id);}}>Usar ficha de {g.name}</Button>)}</div>}
         {createGuest ? (
           <div className="grid gap-5 md:grid-cols-2">
             <div className="space-y-2">
@@ -489,7 +499,8 @@ export function ReservationForm({
           </div>
           <div className="space-y-2">
             <Label>Pagado</Label>
-            <Input type="number" step="0.01" {...register("amount_paid_ars")} />
+            <Input type="number" step="0.01" readOnly={mode === "edit"} {...register("amount_paid_ars")} />
+            {mode === "edit" && <p className="text-xs text-muted-foreground">Se actualiza desde Movimientos de pago, debajo del formulario.</p>}
             <p aria-live="polite" className="text-xs tabular-nums text-muted-foreground">
               {formatCurrency(paid)}
             </p>
@@ -511,6 +522,11 @@ export function ReservationForm({
           </div>
         </div>
 
+        {mode === 'create' && paid>0 && <div className="grid gap-4 sm:grid-cols-3">
+          <label className="space-y-2 text-sm"><span>Fecha del cobro inicial</span><Input type="date" required {...register('initial_payment_date')} /></label>
+          <label className="space-y-2 text-sm"><span>Medio del cobro inicial</span><select className="h-10 w-full rounded-md border border-input bg-background px-3" {...register('initial_payment_method')}>{Object.entries(PAYMENT_METHODS).map(([k,v])=><option key={k} value={k}>{v}</option>)}</select></label>
+          <label className="space-y-2 text-sm"><span>Referencia del cobro inicial</span><Input {...register('initial_payment_reference')} /></label>
+        </div>}
         <div className="grid grid-cols-1 gap-4 rounded-xl bg-muted/50 p-5 sm:grid-cols-3">
           <div className="space-y-1 text-center">
             <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
